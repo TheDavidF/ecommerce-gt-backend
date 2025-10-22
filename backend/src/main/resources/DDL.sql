@@ -1,22 +1,15 @@
--- DDL.sql - Esquema de Base de Datos E-Commerce GT
-
--- ========================================
--- EXTENSIÓN PARA GENERAR UUIDs
--- ========================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ========================================
--- TABLA: ROLES
--- Descripción: Roles de usuarios (COMUN, MODERADOR, LOGISTICA, ADMIN)
+-- ROLES
 -- ========================================
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY,
-  nombre VARCHAR(50) UNIQUE NOT NULL  -- 'COMUN', 'MODERADOR', 'LOGISTICA', 'ADMIN'
+  nombre VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- ========================================
--- TABLA: USUARIOS
--- Descripción: Información de todos los usuarios del sistema
+-- USUARIOS
 -- ========================================
 CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -32,8 +25,7 @@ CREATE TABLE usuarios (
 );
 
 -- ========================================
--- TABLA: USUARIO_ROLES (Relación Muchos a Muchos)
--- Descripción: Asigna roles a usuarios
+-- USUARIO_ROLES
 -- ========================================
 CREATE TABLE usuario_roles (
   usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -42,17 +34,19 @@ CREATE TABLE usuario_roles (
 );
 
 -- ========================================
--- TABLA: CATEGORIAS
--- Descripción: Categorías de productos (Electrónica, Ropa, etc.)
+-- CATEGORIAS
 -- ========================================
 CREATE TABLE categorias (
   id SERIAL PRIMARY KEY,
-  nombre VARCHAR(100) UNIQUE NOT NULL
+  nombre VARCHAR(100) UNIQUE NOT NULL,
+  descripcion TEXT,
+  imagen_url VARCHAR(500),
+  activo BOOLEAN DEFAULT TRUE,
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================================
--- TABLA: PRODUCTOS
--- Descripción: Productos publicados por vendedores
+-- PRODUCTOS
 -- ========================================
 CREATE TABLE productos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -60,29 +54,31 @@ CREATE TABLE productos (
   nombre VARCHAR(255) NOT NULL,
   descripcion TEXT,
   precio NUMERIC(12,2) NOT NULL CHECK (precio >= 0),
-  existencia INTEGER NOT NULL CHECK (existencia >= 0),
-  condicion VARCHAR(20) NOT NULL,  -- 'NUEVO' o 'USADO'
+  precio_descuento NUMERIC(10,2),
+  stock INTEGER NOT NULL CHECK (stock >= 0),
+  marca VARCHAR(100),
+  modelo VARCHAR(100),
   categoria_id INTEGER REFERENCES categorias(id),
-  estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',  -- 'PENDIENTE', 'APROBADO', 'RECHAZADO'
+  estado VARCHAR(50) NOT NULL DEFAULT 'PENDIENTE_REVISION',
+  destacado BOOLEAN DEFAULT FALSE,
   fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT now(),
   fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- ========================================
--- TABLA: IMAGENES_PRODUCTO
--- Descripción: Imágenes asociadas a cada producto
+-- IMAGENES_PRODUCTO
 -- ========================================
 CREATE TABLE imagenes_producto (
-  id SERIAL PRIMARY KEY,
-  producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
-  url TEXT NOT NULL,
-  texto_alternativo TEXT,
-  fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT now()
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  url_imagen VARCHAR(500) NOT NULL,
+  es_principal BOOLEAN DEFAULT FALSE,
+  orden INTEGER DEFAULT 0,
+  producto_id UUID NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
+  fecha_subida TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================================
--- TABLA: SOLICITUDES_MODERACION
--- Descripción: Solicitudes de aprobación de productos
+-- SOLICITUDES_MODERACION
 -- ========================================
 CREATE TABLE solicitudes_moderacion (
   id SERIAL PRIMARY KEY,
@@ -91,13 +87,12 @@ CREATE TABLE solicitudes_moderacion (
   fecha_solicitud TIMESTAMP WITH TIME ZONE DEFAULT now(),
   moderador_id UUID REFERENCES usuarios(id),
   fecha_revision TIMESTAMP WITH TIME ZONE,
-  estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',  -- 'PENDIENTE', 'APROBADO', 'RECHAZADO'
+  estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
   razon TEXT
 );
 
 -- ========================================
--- TABLA: RESENAS_PRODUCTO
--- Descripción: Calificaciones y comentarios de compradores
+-- RESENAS_PRODUCTO
 -- ========================================
 CREATE TABLE resenas_producto (
   id SERIAL PRIMARY KEY,
@@ -106,12 +101,11 @@ CREATE TABLE resenas_producto (
   calificacion SMALLINT CHECK (calificacion >= 1 AND calificacion <= 5),
   comentario TEXT,
   fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  UNIQUE(producto_id, comprador_id)  -- Un usuario solo puede dejar 1 reseña por producto
+  UNIQUE(producto_id, comprador_id)
 );
 
 -- ========================================
--- TABLA: SANCIONES
--- Descripción: Sanciones aplicadas a usuarios
+-- SANCIONES
 -- ========================================
 CREATE TABLE sanciones (
   id SERIAL PRIMARY KEY,
@@ -125,8 +119,7 @@ CREATE TABLE sanciones (
 );
 
 -- ========================================
--- TABLA: CARRITOS
--- Descripción: Carrito de compras de cada usuario
+-- CARRITOS
 -- ========================================
 CREATE TABLE carritos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -136,8 +129,7 @@ CREATE TABLE carritos (
 );
 
 -- ========================================
--- TABLA: ITEMS_CARRITO
--- Descripción: Productos agregados al carrito
+-- ITEMS_CARRITO
 -- ========================================
 CREATE TABLE items_carrito (
   id SERIAL PRIMARY KEY,
@@ -146,26 +138,24 @@ CREATE TABLE items_carrito (
   cantidad INTEGER NOT NULL CHECK (cantidad > 0),
   precio_unitario NUMERIC(12,2) NOT NULL,
   fecha_agregado TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  UNIQUE (carrito_id, producto_id)  -- Un producto solo puede estar una vez en el carrito
+  UNIQUE (carrito_id, producto_id)
 );
 
 -- ========================================
--- TABLA: PEDIDOS
--- Descripción: Órdenes de compra realizadas
+-- PEDIDOS
 -- ========================================
 CREATE TABLE pedidos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   comprador_id UUID REFERENCES usuarios(id),
   monto_total NUMERIC(12,2) NOT NULL,
-  estado VARCHAR(20) NOT NULL DEFAULT 'EN_CURSO',  -- 'EN_CURSO', 'ENTREGADO'
+  estado VARCHAR(20) NOT NULL DEFAULT 'EN_CURSO',
   fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT now(),
   fecha_entrega_estimada DATE,
   fecha_entregado TIMESTAMP WITH TIME ZONE
 );
 
 -- ========================================
--- TABLA: ITEMS_PEDIDO
--- Descripción: Productos incluidos en cada pedido
+-- ITEMS_PEDIDO
 -- ========================================
 CREATE TABLE items_pedido (
   id SERIAL PRIMARY KEY,
@@ -174,13 +164,12 @@ CREATE TABLE items_pedido (
   vendedor_id UUID REFERENCES usuarios(id),
   cantidad INTEGER NOT NULL,
   precio_unitario NUMERIC(12,2) NOT NULL,
-  comision NUMERIC(12,2) NOT NULL,  -- 5% del (precio_unitario * cantidad)
-  monto_vendedor NUMERIC(12,2) NOT NULL  -- 95% del (precio_unitario * cantidad)
+  comision NUMERIC(12,2) NOT NULL,
+  monto_vendedor NUMERIC(12,2) NOT NULL
 );
 
 -- ========================================
--- TABLA: PAGOS
--- Descripción: Información de pagos procesados
+-- PAGOS
 -- ========================================
 CREATE TABLE pagos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -189,7 +178,7 @@ CREATE TABLE pagos (
   id_pago_proveedor VARCHAR(255),
   monto NUMERIC(12,2) NOT NULL,
   moneda VARCHAR(10) DEFAULT 'GTQ',
-  estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',  -- 'PENDIENTE', 'COMPLETADO', 'FALLIDO'
+  estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
   ultimos_4_digitos VARCHAR(4),
   marca_tarjeta VARCHAR(50),
   token_tarjeta_guardada VARCHAR(255),
@@ -197,8 +186,7 @@ CREATE TABLE pagos (
 );
 
 -- ========================================
--- TABLA: TARJETAS_GUARDADAS
--- Descripción: Tarjetas de crédito guardadas por usuarios
+-- TARJETAS_GUARDADAS
 -- ========================================
 CREATE TABLE tarjetas_guardadas (
   id SERIAL PRIMARY KEY,
@@ -212,22 +200,20 @@ CREATE TABLE tarjetas_guardadas (
 );
 
 -- ========================================
--- TABLA: ENVIOS
--- Descripción: Información de envíos de pedidos
+-- ENVIOS
 -- ========================================
 CREATE TABLE envios (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   pedido_id UUID REFERENCES pedidos(id) UNIQUE,
   usuario_logistica_id UUID REFERENCES usuarios(id),
-  estado VARCHAR(30) DEFAULT 'EN_CURSO',  -- 'EN_CURSO', 'ENTREGADO'
+  estado VARCHAR(30) DEFAULT 'EN_CURSO',
   fecha_entrega_estimada DATE,
   fecha_entregado TIMESTAMP WITH TIME ZONE,
   fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- ========================================
--- TABLA: NOTIFICACIONES
--- Descripción: Notificaciones enviadas a usuarios
+-- NOTIFICACIONES
 -- ========================================
 CREATE TABLE notificaciones (
   id SERIAL PRIMARY KEY,
@@ -242,8 +228,7 @@ CREATE TABLE notificaciones (
 );
 
 -- ========================================
--- TABLA: TRANSACCIONES
--- Descripción: Registro de transacciones financieras
+-- TRANSACCIONES
 -- ========================================
 CREATE TABLE transacciones (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -254,9 +239,8 @@ CREATE TABLE transacciones (
   fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-
 -- ========================================
--- ÍNDICES PARA OPTIMIZACIÓN DE CONSULTAS
+-- ÍNDICES
 -- ========================================
 CREATE INDEX idx_productos_vendedor ON productos (vendedor_id);
 CREATE INDEX idx_productos_categoria ON productos (categoria_id);
@@ -264,23 +248,4 @@ CREATE INDEX idx_productos_estado ON productos (estado);
 CREATE INDEX idx_pedidos_comprador ON pedidos (comprador_id);
 CREATE INDEX idx_solicitudes_moderacion_estado ON solicitudes_moderacion (estado);
 CREATE INDEX idx_envios_estado ON envios (estado);
-
--- ========================================
--- FUNCIÓN Y TRIGGERS PARA ACTUALIZAR FECHA_ACTUALIZACION
--- ========================================
-CREATE OR REPLACE FUNCTION actualizar_fecha_actualizacion()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.fecha_actualizacion = now();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER trigger_actualizar_usuarios BEFORE UPDATE ON usuarios
-    FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
-CREATE TRIGGER trigger_actualizar_productos BEFORE UPDATE ON productos
-    FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_actualizacion();
-
-CREATE TRIGGER trigger_actualizar_carritos BEFORE UPDATE ON carritos
-    FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_actualizacion();
+CREATE INDEX idx_imagenes_producto ON imagenes_producto (producto_id);

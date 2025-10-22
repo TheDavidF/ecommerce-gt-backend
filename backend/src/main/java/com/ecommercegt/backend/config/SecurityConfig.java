@@ -6,6 +6,7 @@ import com.ecommercegt.backend.security.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -62,8 +63,9 @@ public class SecurityConfig {
     
     /**
      * Configuración de seguridad HTTP
-     * - Endpoints públicos: /api/auth/**, /api/test/public
-     * - Endpoints protegidos: Todos los demás
+     * - Endpoints públicos (GET): Categorías y productos (lectura)
+     * - Endpoints públicos: /api/auth/** (login, register)
+     * - Endpoints protegidos: POST, PUT, DELETE (requieren autenticación)
      * - Sin sesiones (stateless con JWT)
      */
     @Bean
@@ -75,8 +77,24 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos - Autenticación
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/test/public").permitAll()
+                
+                // Endpoints públicos - Categorías (solo GET)
+                .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
+                
+                // Endpoints públicos - Productos (solo GET)
+                .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/disponibles").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/destacados").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/buscar").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/categoria/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/filtrar/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/vendedor/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/{id}").permitAll()
+                
+                // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             );
         
