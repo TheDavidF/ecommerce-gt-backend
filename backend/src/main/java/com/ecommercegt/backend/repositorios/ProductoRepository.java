@@ -44,4 +44,6 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
     
     // Contar productos por estado
     Long countByEstado(EstadoProducto estado);
+
+    Long countByCategoriaId(Integer categoriaId);
 }

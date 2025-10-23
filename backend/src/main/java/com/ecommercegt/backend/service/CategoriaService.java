@@ -4,6 +4,7 @@ import com.ecommercegt.backend.dto.request.CategoriaRequest;
 import com.ecommercegt.backend.dto.response.CategoriaResponse;
 import com.ecommercegt.backend.models.entidades.Categoria;
 import com.ecommercegt.backend.repositorios.CategoriaRepository;
+import com.ecommercegt.backend.repositorios.ProductoRepository;  
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,9 @@ public class CategoriaService {
     
     @Autowired
     private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private ProductoRepository productoRepository;
     
     /**
      * Crear nueva categoría
@@ -122,6 +126,9 @@ public class CategoriaService {
     /**
      * Convertir entidad a DTO Response
      */
+    /**
+ * Convertir entidad a DTO Response
+ */
     private CategoriaResponse convertirAResponse(Categoria categoria) {
         CategoriaResponse response = new CategoriaResponse();
         response.setId(categoria.getId());
@@ -130,7 +137,15 @@ public class CategoriaService {
         response.setImagenUrl(categoria.getImagenUrl());
         response.setActivo(categoria.getActivo());
         response.setFechaCreacion(categoria.getFechaCreacion());
-        response.setCantidadProductos(categoria.getProductos().size());
+        
+        // SOLUCIÓN: Usar repositorio para contar (evita lazy loading)
+        try {
+            Long count = productoRepository.countByCategoriaId(categoria.getId());
+            response.setCantidadProductos(count != null ? count.intValue() : 0);
+        } catch (Exception e) {
+            response.setCantidadProductos(0);  // Si falla, usar 0
+        }
+        
         return response;
     }
 }

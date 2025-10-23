@@ -11,7 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,7 +21,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
     
     @Autowired
@@ -34,17 +32,11 @@ public class SecurityConfig {
     @Autowired
     private AuthTokenFilter authTokenFilter;
     
-    /**
-     * BCrypt para encriptar contraseñas
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
     
-    /**
-     * Proveedor de autenticación con UserDetailsService y PasswordEncoder
-     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -53,21 +45,11 @@ public class SecurityConfig {
         return authProvider;
     }
     
-    /**
-     * AuthenticationManager para autenticar usuarios
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
     
-    /**
-     * Configuración de seguridad HTTP
-     * - Endpoints públicos (GET): Categorías y productos (lectura)
-     * - Endpoints públicos: /api/auth/** (login, register)
-     * - Endpoints protegidos: POST, PUT, DELETE (requieren autenticación)
-     * - Sin sesiones (stateless con JWT)
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -77,24 +59,26 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos - Autenticación
+                // ============================================
+                // ENDPOINTS PÚBLICOS (NO REQUIEREN TOKEN)
+                // ============================================
+                
+                // Autenticación
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/test/public").permitAll()
+                .requestMatchers("/error").permitAll()
                 
-                // Endpoints públicos - Categorías (solo GET)
+                // Categorías - TODOS los GET son públicos
+                .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
                 
-                // Endpoints públicos - Productos (solo GET)
+                // Productos - TODOS los GET son públicos
                 .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/disponibles").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/destacados").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/buscar").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/categoria/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/filtrar/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/vendedor/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
                 
-                // Todo lo demás requiere autenticación
+                // ============================================
+                // TODO LO DEMÁS REQUIERE AUTENTICACIÓN
+                // ============================================
                 .anyRequest().authenticated()
             );
         
