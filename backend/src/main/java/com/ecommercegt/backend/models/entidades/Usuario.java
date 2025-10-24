@@ -24,6 +24,7 @@ public class Usuario {
     @Column(columnDefinition = "UUID")
     private UUID id;
     
+
     @Column(name = "nombre_usuario", unique = true, nullable = false, length = 100)
     private String nombreUsuario;
     
