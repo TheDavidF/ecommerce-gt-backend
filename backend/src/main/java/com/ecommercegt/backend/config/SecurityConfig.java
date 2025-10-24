@@ -22,7 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // ← AGREGAR ESTA LÍNEA (para @PreAuthorize)
+@EnableMethodSecurity  // Para @PreAuthorize
 public class SecurityConfig {
     
     @Autowired
@@ -77,6 +77,10 @@ public class SecurityConfig {
                 // Productos - TODOS los GET son públicos
                 .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+                
+                // Búsqueda - PÚBLICO (nuevo)
+                .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
                 
                 // Reviews públicas - Solo GET de reviews y estadísticas
                 .requestMatchers(HttpMethod.GET, "/api/reviews/producto/**").permitAll()

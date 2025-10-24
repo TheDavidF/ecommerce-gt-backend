@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 /**
  * Servicio de Reviews
  * Gestiona reseñas, votos y estadísticas
+ * CON NOTIFICACIONES AUTOMÁTICAS
  */
 @Service
 public class ReviewService {
@@ -47,6 +48,9 @@ public class ReviewService {
 
     @Autowired
     private ItemPedidoRepository itemPedidoRepository;
+    
+    @Autowired
+    private NotificacionService notificacionService;  // ← NUEVO
 
     /**
      * Crear una nueva review
@@ -89,8 +93,7 @@ public class ReviewService {
         // 5. Guardar review
         Review reviewGuardada = reviewRepository.save(review);
 
-        // 6. Recalcular promedio del producto (solo si está aprobada, pero lo hacemos
-        // preventivo)
+        // 6. Recalcular promedio del producto (solo si está aprobada, pero lo hacemos preventivo)
         recalcularPromedioProducto(request.getProductoId());
 
         // 7. Retornar respuesta
@@ -224,6 +227,7 @@ public class ReviewService {
 
     /**
      * Aprobar una review (MODERADOR/ADMIN)
+     * ← CON NOTIFICACIONES
      */
     @Transactional
     public ReviewResponse aprobarReview(Long reviewId) {
@@ -237,12 +241,24 @@ public class ReviewService {
 
         // Recalcular promedio (ahora incluye esta review)
         recalcularPromedioProducto(review.getProducto().getId());
+        
+        // ========== NOTIFICAR APROBACIÓN (NUEVO) ==========
+        try {
+            notificacionService.notificarReviewAprobada(
+                review.getUsuario().getId(),
+                review.getId(),
+                review.getProducto().getNombre()
+            );
+        } catch (Exception e) {
+            System.err.println("Error al notificar aprobación de review: " + e.getMessage());
+        }
 
         return convertirAResponse(reviewAprobada, moderador.getId());
     }
 
     /**
      * Rechazar una review (MODERADOR/ADMIN)
+     * ← CON NOTIFICACIONES
      */
     @Transactional
     public ReviewResponse rechazarReview(Long reviewId) {
@@ -256,6 +272,18 @@ public class ReviewService {
 
         // Recalcular promedio (excluye esta review)
         recalcularPromedioProducto(review.getProducto().getId());
+        
+        // ========== NOTIFICAR RECHAZO (NUEVO) ==========
+        try {
+            notificacionService.notificarReviewRechazada(
+                review.getUsuario().getId(),
+                review.getId(),
+                review.getProducto().getNombre(),
+                "No cumple con las políticas de reseñas de la tienda"
+            );
+        } catch (Exception e) {
+            System.err.println("Error al notificar rechazo de review: " + e.getMessage());
+        }
 
         return convertirAResponse(reviewRechazada, moderador.getId());
     }
@@ -350,7 +378,7 @@ public class ReviewService {
 
         return pedidosEntregados.stream()
                 .flatMap(pedido -> pedido.getItems().stream())
-                .anyMatch(item -> item.getProductoId().equals(productoId)); // ✅ CORRECTO
+                .anyMatch(item -> item.getProductoId().equals(productoId));
     }
 
     /**
