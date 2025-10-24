@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity  // ← AGREGAR ESTA LÍNEA (para @PreAuthorize)
 public class SecurityConfig {
     
     @Autowired
@@ -76,8 +78,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
                 
+                // Reviews públicas - Solo GET de reviews y estadísticas
+                .requestMatchers(HttpMethod.GET, "/api/reviews/producto/**").permitAll()
+                
                 // ============================================
-                // TODO LO DEMÁS REQUIERE AUTENTICACIÓN
+                // ENDPOINTS DE ADMIN (REQUIEREN ROL ADMIN)
+                // ============================================
+                // La validación de rol se hace con @PreAuthorize en el controller
+                .requestMatchers("/api/admin/**").authenticated()
+                
+                // ============================================
+                // TODO LO DEMAS REQUIERE AUTENTICACION
                 // ============================================
                 .anyRequest().authenticated()
             );
