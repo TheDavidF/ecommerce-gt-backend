@@ -1,88 +1,72 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm p-4 flex gap-4 items-center hover:shadow-md transition-shadow">
-    <!-- Imagen del producto -->
-    <div class="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-      <img
-        v-if="item.producto.imagenUrl"
-        :src="item.producto.imagenUrl"
-        :alt="item.producto.nombre"
-        class="w-full h-full object-cover"
-      />
-      <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
-        
-      </div>
+  <div class="cart-item">
+    <div class="cart-item-image">
+      <img 
+        :src="item.productoImagen || '/placeholder.jpg'" 
+        :alt="item.productoNombre"
+        @error="handleImageError"
+      >
     </div>
-
-    <!-- Información del producto -->
-    <div class="flex-1 min-w-0">
-      <h3 class="font-semibold text-gray-900 truncate">
-        {{ item.producto.nombre }}
-      </h3>
-      <p class="text-sm text-gray-600 mt-1">
-        Precio: Q {{ formatPrice(item.precio) }}
-      </p>
-      <p v-if="item.producto.stock < 5" class="text-xs text-orange-600 mt-1">
-         Solo quedan {{ item.producto.stock }} unidades
-      </p>
+    
+    <div class="cart-item-details">
+      <h3 class="cart-item-title">{{ item.productoNombre }}</h3>
+      <p class="cart-item-price">Q{{ formatPrice(item.precioUnitario) }}</p>
+      <p class="cart-item-stock">Stock disponible: {{ item.productoStock }}</p>
     </div>
-
-    <!-- Controles de cantidad -->
-    <div class="flex items-center gap-3">
-      <button
-        @click="$emit('decrement')"
+    
+    <div class="cart-item-quantity">
+      <button 
+        @click="decrementQuantity" 
+        :disabled="loading || item.cantidad <= 1"
+        class="quantity-btn"
+      >
+        -
+      </button>
+      <span class="quantity-value">{{ item.cantidad }}</span>
+      <button 
+        @click="incrementQuantity" 
+        :disabled="loading || item.cantidad >= item.productoStock"
+        class="quantity-btn"
+      >
+        +
+      </button>
+    </div>
+    
+    <div class="cart-item-subtotal">
+      <p class="subtotal-label">Subtotal</p>
+      <p class="subtotal-value">Q{{ formatPrice(item.subtotal) }}</p>
+    </div>
+    
+    <div class="cart-item-actions">
+      <button 
+        @click="removeItem" 
         :disabled="loading"
-        class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors disabled:opacity-50"
+        class="remove-btn"
+        title="Eliminar del carrito"
       >
-        <span class="text-lg font-bold">−</span>
-      </button>
-      
-      <span class="w-12 text-center font-semibold">
-        {{ item.cantidad }}
-      </span>
-      
-      <button
-        @click="$emit('increment')"
-        :disabled="loading || item.cantidad >= item.producto.stock"
-        class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors disabled:opacity-50"
-      >
-        <span class="text-lg font-bold">+</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
       </button>
     </div>
-
-    <!-- Subtotal -->
-    <div class="text-right min-w-[100px]">
-      <p class="text-lg font-bold text-gray-900">
-        Q {{ formatPrice(item.precio * item.cantidad) }}
-      </p>
-    </div>
-
-    <!-- Botón eliminar -->
-    <button
-      @click="$emit('remove')"
-      :disabled="loading"
-      class="text-red-600 hover:text-red-700 p-2 disabled:opacity-50"
-      title="Eliminar del carrito"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-      </svg>
-    </button>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref } from 'vue'
+import { useCartStore } from '../../stores/cart'
+import { useToast } from 'vue-toastification'
+
+const props = defineProps({
   item: {
     type: Object,
     required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
   }
 })
 
-defineEmits(['increment', 'decrement', 'remove'])
+const cartStore = useCartStore()
+const toast = useToast()
+const loading = ref(false)
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('es-GT', {
@@ -90,4 +74,230 @@ const formatPrice = (price) => {
     maximumFractionDigits: 2
   }).format(price)
 }
+
+const incrementQuantity = async () => {
+  if (props.item.cantidad >= props.item.productoStock) {
+    toast.warning('No hay más stock disponible')
+    return
+  }
+  
+  loading.value = true
+  try {
+    await cartStore.updateQuantity(props.item.id, props.item.cantidad + 1)
+  } catch (error) {
+    console.error('Error al incrementar cantidad:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const decrementQuantity = async () => {
+  if (props.item.cantidad <= 1) {
+    return
+  }
+  
+  loading.value = true
+  try {
+    await cartStore.updateQuantity(props.item.id, props.item.cantidad - 1)
+  } catch (error) {
+    console.error('Error al decrementar cantidad:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const removeItem = async () => {
+  if (!confirm(`¿Estás seguro de eliminar "${props.item.productoNombre}" del carrito?`)) {
+    return
+  }
+  
+  loading.value = true
+  try {
+    await cartStore.removeItem(props.item.id)
+    toast.success('Producto eliminado del carrito')
+  } catch (error) {
+    console.error('Error al eliminar item:', error)
+    toast.error('Error al eliminar el producto')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleImageError = (event) => {
+  event.target.src = 'https://via.placeholder.com/150?text=Sin+Imagen'
+}
 </script>
+
+<style scoped>
+.cart-item {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cart-item-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.cart-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cart-item-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.cart-item-price {
+  font-size: 1rem;
+  color: #3b82f6;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cart-item-stock {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.cart-item-quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.quantity-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 0.375rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+}
+
+.quantity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.cart-item-subtotal {
+  text-align: right;
+}
+
+.subtotal-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtotal-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+.remove-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  border: none;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover:not(:disabled) {
+  background: #fecaca;
+  transform: scale(1.05);
+}
+
+.remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cart-item {
+    grid-template-columns: 80px 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .cart-item-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .cart-item-quantity {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .cart-item-subtotal {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+
+  .cart-item-actions {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+</style>

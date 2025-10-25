@@ -6,7 +6,7 @@
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
-           Mi Carrito
+          Mi Carrito
         </h1>
         <p class="text-gray-600">
           {{ cartStore.itemCount }} {{ cartStore.itemCount === 1 ? 'producto' : 'productos' }} en tu carrito
@@ -89,12 +89,12 @@
             <!-- Mensaje de envío gratis -->
             <div v-if="cartStore.subtotal > 500" class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
               <p class="text-sm text-green-800">
-                 ¡Tienes envío gratis!
+                ¡Tienes envío gratis!
               </p>
             </div>
             <div v-else class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p class="text-sm text-blue-800">
-                 Agrega Q {{ formatPrice(500 - cartStore.subtotal) }} más para envío gratis
+                Agrega Q {{ formatPrice(500 - cartStore.subtotal) }} más para envío gratis
               </p>
             </div>
 
@@ -148,7 +148,8 @@ const formatPrice = (price) => {
 }
 
 const handleRemove = async (item) => {
-  if (confirm(`¿Eliminar "${item.producto.nombre}" del carrito?`)) {
+  // ✅ CORREGIDO: usar productoNombre en lugar de producto.nombre
+  if (confirm(`¿Eliminar "${item.productoNombre}" del carrito?`)) {
     await cartStore.removeItem(item.id)
   }
 }
@@ -170,10 +171,25 @@ const handleCheckout = async () => {
   }
   
   // Redirigir a checkout
-  router.push('/checkout')
+  toast.info('Módulo de checkout en desarrollo')
+  // router.push('/checkout')
 }
 
 onMounted(() => {
   cartStore.fetchCart()
 })
 </script>
+
+<style scoped>
+.btn-primary {
+  @apply bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply bg-white text-gray-700 px-4 py-2 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-md p-6;
+}
+</style>
