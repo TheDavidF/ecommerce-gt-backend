@@ -110,4 +110,50 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findReviewsMasUtiles(
             @Param("minVotos") Long minVotos,
             Pageable pageable);
+
+    /**
+     * Calcular promedio general de todas las calificaciones aprobadas
+     */
+    @Query("SELECT AVG(r.calificacion) FROM Review r WHERE r.aprobado = true")
+    Double calcularPromedioGeneralCalificaciones();
+
+    /**
+     * Contar reviews aprobadas
+     */
+    Long countByAprobadoTrue();
+
+    /**
+     * Calcular calificación promedio de todos los productos
+     */
+    @Query(value = "SELECT AVG(calificacion) FROM reviews WHERE aprobado = true", nativeQuery = true)
+    Double calcularCalificacionPromedio();
+
+    /**
+     * Contar reviews pendientes de aprobación
+     */
+    @Query(value = "SELECT COUNT(*) FROM reviews WHERE aprobado = false", nativeQuery = true)
+    Long countReviewsPendientes();
+
+    /**
+     * Contar reviews aprobadas
+     */
+    @Query(value = "SELECT COUNT(*) FROM reviews WHERE aprobado = true", nativeQuery = true)
+    Long countReviewsAprobadas();
+
+    /**
+     * Obtener productos mejor calificados
+     * Retorna: producto_id, nombre, calificacion_promedio, cantidad_reviews
+     */
+    @Query(value = "SELECT " +
+            "p.id as producto_id, " +
+            "p.nombre as producto_nombre, " +
+            "p.calificacion_promedio, " +
+            "p.cantidad_reviews, " +
+            "p.precio " +
+            "FROM productos p " +
+            "WHERE p.cantidad_reviews >= 3 " +
+            "AND p.calificacion_promedio > 0 " +
+            "ORDER BY p.calificacion_promedio DESC, p.cantidad_reviews DESC " +
+            "LIMIT :limite", nativeQuery = true)
+    List<Object[]> findProductosMejorCalificados(@Param("limite") int limite);
 }

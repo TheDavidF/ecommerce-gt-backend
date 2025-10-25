@@ -57,10 +57,10 @@ public class AdminService {
 
         // Vendedores (usuarios con rol VENDEDOR)
         Long moderadores = usuarioRepository.findAll().stream()
-        .filter(u -> u.getRoles().stream()
-                .anyMatch(r -> r.getNombre() == RolNombre.MODERADOR))
-        .count();
-stats.setTotalVendedores(moderadores); 
+                .filter(u -> u.getRoles().stream()
+                        .anyMatch(r -> r.getNombre() == RolNombre.MODERADOR))
+                .count();
+        stats.setTotalVendedores(moderadores);
 
         // ==================== ESTADÍSTICAS DE PRODUCTOS ====================
         stats.setTotalProductos(productoRepository.count());
@@ -137,7 +137,10 @@ stats.setTotalVendedores(moderadores);
         stats.setCalificacionPromedioGeneral(calificacionPromedio);
 
         // ==================== PRODUCTOS MÁS VENDIDOS ====================
-        List<Object[]> productosMasVendidos = itemPedidoRepository.findProductosMasVendidos();
+
+        List<Object[]> productosMasVendidos = itemPedidoRepository.findProductosMasVendidos(
+                PageRequest.of(0, 10) // ← Top 10 productos
+        );
 
         List<EstadisticasGeneralesResponse.ProductoMasVendido> topProductos = productosMasVendidos.stream()
                 .limit(5)

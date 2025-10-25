@@ -25,4 +25,26 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
      */
     @Query("SELECT COUNT(u) FROM Usuario u JOIN u.roles r WHERE r.nombre = :rolNombre")
     Long countUsuariosByRolNombre(@Param("rolNombre") String rolNombre);
+
+    /**
+     * Contar usuarios registrados hoy (SQL nativo)
+     */
+    @Query(value = "SELECT COUNT(*) FROM usuarios WHERE DATE(fecha_creacion) = CURRENT_DATE", nativeQuery = true)
+    Long countUsuariosRegistradosHoy();
+
+    /**
+     * Contar usuarios registrados esta semana (SQL nativo)
+     */
+    @Query(value = "SELECT COUNT(*) FROM usuarios " +
+            "WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '7 days'", nativeQuery = true)
+    Long countUsuariosRegistradosEstaSemana();
+
+    /**
+     * Contar vendedores (SQL nativo)
+     */
+    @Query(value = "SELECT COUNT(DISTINCT u.id) FROM usuarios u " +
+            "INNER JOIN usuario_roles ur ON u.id = ur.usuario_id " +
+            "INNER JOIN roles r ON ur.rol_id = r.id " +
+            "WHERE r.nombre = 'VENDEDOR'", nativeQuery = true)
+    Long countVendedores();
 }
