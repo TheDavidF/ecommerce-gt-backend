@@ -8,6 +8,20 @@ const routes = [
     component: () => import('../views/Home.vue'),
     meta: { requiresAuth: false }
   },
+
+  {
+    path: '/productos',
+    name: 'Products',
+    component: () => import('../views/Products.vue'),
+    meta: { requiresAuth: false }
+ },
+ {
+    path: '/productos/:id',
+    name: 'ProductDetail',
+    component: () => import('../views/ProductDetail.vue'),
+    meta: { requiresAuth: false }
+},
+
   {
     path: '/login',
     name: 'Login',

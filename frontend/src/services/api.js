@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL
+// Obtener la URL base del backend desde las variables de entorno
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+
+console.log('API_URL configurada:', API_URL)  // Para debugging
 
 // Crear instancia de axios
 const api = axios.create({
@@ -17,6 +20,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    console.log('Request:', config.method.toUpperCase(), config.baseURL + config.url)  // Para debugging
     return config
   },
   (error) => {
@@ -28,6 +32,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', error.response?.status, error.config?.url)  // Para debugging
     if (error.response?.status === 401) {
       // Token expirado o inválido
       localStorage.removeItem('token')

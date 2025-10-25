@@ -22,6 +22,12 @@
             >
               Inicio
             </router-link>
+            <router-link
+              to="/productos"
+              class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium"
+            >
+              Productos
+            </router-link>
             <router-link to="/login" class="btn-primary">
               Iniciar Sesión
             </router-link>
@@ -38,6 +44,13 @@
               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium"
             >
               Inicio
+            </router-link>
+            
+            <router-link
+              to="/productos"
+              class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium"
+            >
+              Productos
             </router-link>
 
             <!-- Enlaces según rol -->
@@ -175,6 +188,13 @@
             Inicio
           </router-link>
           <router-link
+            to="/productos"
+            class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+            @click="closeMobileMenu"
+          >
+            Productos
+          </router-link>
+          <router-link
             to="/login"
             class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
             @click="closeMobileMenu"
@@ -200,6 +220,13 @@
             @click="closeMobileMenu"
           >
             Inicio
+          </router-link>
+          <router-link
+            to="/productos"
+            class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+            @click="closeMobileMenu"
+          >
+            Productos
           </router-link>
           <router-link
             v-if="authStore.isAdmin"
@@ -261,7 +288,7 @@ const authStore = useAuthStore();
 const showDropdown = ref(false);
 const showMobileMenu = ref(false);
 const dropdownRef = ref(null);
-const cartCount = ref(0); // TODO: conectar con store del carrito
+const cartCount = ref(0);
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value;
@@ -286,7 +313,6 @@ const handleLogout = () => {
   router.push("/");
 };
 
-// Cerrar dropdown al hacer click fuera
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     closeDropdown();

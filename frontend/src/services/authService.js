@@ -3,17 +3,35 @@ import api from './api'
 export default {
   // Registro de usuario
   async register(userData) {
-    const response = await api.post('/auth/registro', userData)
+    // Mapear campos al formato del backend
+    const payload = {
+      nombreUsuario: userData.nombreUsuario,
+      email: userData.email,
+      contrasena: userData.password,  // password → contrasena
+      nombreCompleto: userData.nombreCompleto,
+      telefono: userData.telefono || null,
+      direccion: userData.direccion || null
+    }
+    
+    const response = await api.post('/auth/register', payload)
     return response.data
   },
 
   // Login
   async login(credentials) {
-    const response = await api.post('/auth/login', credentials)
+    // Mapear campos al formato del backend
+    const payload = {
+      nombreUsuario: credentials.nombreUsuario,
+      contrasena: credentials.password  // password → contrasena
+    }
+    
+    const response = await api.post('/auth/login', payload)
+    
     if (response.data.token) {
       localStorage.setItem('token', response.data.token)
       localStorage.setItem('user', JSON.stringify(response.data))
     }
+    
     return response.data
   },
 
