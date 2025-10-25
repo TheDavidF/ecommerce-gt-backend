@@ -19,26 +19,32 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // Para @PreAuthorize
+@EnableMethodSecurity // Para @PreAuthorize
 public class SecurityConfig {
-    
+
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
-    
+
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
-    
+
     @Autowired
     private AuthTokenFilter authTokenFilter;
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -46,60 +52,87 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
-    
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-    
+
+    // ============================================
+    // CONFIGURACIÓN DE CORS
+    // ============================================
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // USAR allowedOriginPatterns - compatible con allowCredentials
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(unauthorizedHandler))
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
                 // ============================================
-                // ENDPOINTS PÚBLICOS (NO REQUIEREN TOKEN)
+                // HABILITAR CORS
                 // ============================================
-                
-                // Autenticación
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/test/public").permitAll()
-                .requestMatchers("/error").permitAll()
-                
-                // Categorías - TODOS los GET son públicos
-                .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
-                
-                // Productos - TODOS los GET son públicos
-                .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
-                
-                // Búsqueda - PÚBLICO (nuevo)
-                .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
-                
-                // Reviews públicas - Solo GET de reviews y estadísticas
-                .requestMatchers(HttpMethod.GET, "/api/reviews/producto/**").permitAll()
-                
-                // ============================================
-                // ENDPOINTS DE ADMIN (REQUIEREN ROL ADMIN)
-                // ============================================
-                // La validación de rol se hace con @PreAuthorize en el controller
-                .requestMatchers("/api/admin/**").authenticated()
-                
-                // ============================================
-                // TODO LO DEMAS REQUIERE AUTENTICACION
-                // ============================================
-                .anyRequest().authenticated()
-            );
-        
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                .csrf(csrf -> csrf.disable())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(unauthorizedHandler))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // ============================================
+                        // ENDPOINTS PÚBLICOS (NO REQUIEREN TOKEN)
+                        // ============================================
+
+                        // Autenticación
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/test/public").permitAll()
+                        .requestMatchers("/error").permitAll()
+
+                        // Categorías - TODOS los GET son públicos
+                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
+
+                        // Productos - TODOS los GET son públicos
+                        .requestMatchers(HttpMethod.GET, "/api/productos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+
+                        // Búsqueda - PÚBLICO
+                        .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
+
+                        // Reviews públicas - Solo GET de reviews y estadísticas
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/producto/**").permitAll()
+
+                        // ============================================
+                        // ENDPOINTS DE ADMIN (REQUIEREN ROL ADMIN)
+                        // ============================================
+                        .requestMatchers("/api/admin/**").authenticated()
+
+                        // ============================================
+                        // TODO LO DEMAS REQUIERE AUTENTICACION
+                        // ============================================
+                        .anyRequest().authenticated());
+
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 }

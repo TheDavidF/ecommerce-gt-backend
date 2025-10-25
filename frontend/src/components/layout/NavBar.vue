@@ -45,7 +45,7 @@
             >
               Inicio
             </router-link>
-            
+
             <router-link
               to="/productos"
               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium"
@@ -70,17 +70,18 @@
               Mis Productos
             </router-link>
 
+            <!-- Carrito con contador -->
             <router-link
               v-if="authStore.isCliente || !authStore.isAdmin"
               to="/carrito"
               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium relative"
             >
-              Carrito
+              🛒 Carrito
               <span
-                v-if="cartCount > 0"
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                v-if="cartStore.itemCount > 0"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
               >
-                {{ cartCount }}
+                {{ cartStore.itemCount }}
               </span>
             </router-link>
 
@@ -244,13 +245,20 @@
           >
             Mis Productos
           </router-link>
+          
+          <!-- Carrito en móvil - CORREGIDO -->
           <router-link
+            v-if="authStore.isCliente || !authStore.isAdmin"
             to="/carrito"
             class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
             @click="closeMobileMenu"
           >
-            Carrito ({{ cartCount }})
+            🛒 Carrito 
+            <span v-if="cartStore.itemCount > 0" class="text-red-600 font-bold">
+              ({{ cartStore.itemCount }})
+            </span>
           </router-link>
+          
           <router-link
             to="/mis-pedidos"
             class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
@@ -278,54 +286,55 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "../../stores/auth";
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
+import { useCartStore } from '../../stores/cart'
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 
-const showDropdown = ref(false);
-const showMobileMenu = ref(false);
-const dropdownRef = ref(null);
-const cartCount = ref(0);
+const showDropdown = ref(false)
+const showMobileMenu = ref(false)
+const dropdownRef = ref(null)
 
 const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value;
-};
+  showDropdown.value = !showDropdown.value
+}
 
 const closeDropdown = () => {
-  showDropdown.value = false;
-};
+  showDropdown.value = false
+}
 
 const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value;
-};
+  showMobileMenu.value = !showMobileMenu.value
+}
 
 const closeMobileMenu = () => {
-  showMobileMenu.value = false;
-};
+  showMobileMenu.value = false
+}
 
 const handleLogout = () => {
-  authStore.logout();
-  closeDropdown();
-  closeMobileMenu();
-  router.push("/");
-};
+  authStore.logout()
+  closeDropdown()
+  closeMobileMenu()
+  router.push('/')
+}
 
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
-    closeDropdown();
+    closeDropdown()
   }
-};
+}
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
+  document.addEventListener('click', handleClickOutside)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>

@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/carrito")
-@CrossOrigin(origins = "*", maxAge = 3600)
+// CORS configurado globalmente en SecurityConfig - no necesita @CrossOrigin aquí
 public class CarritoController {
     
     @Autowired

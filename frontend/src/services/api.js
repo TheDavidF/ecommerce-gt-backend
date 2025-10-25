@@ -1,44 +1,54 @@
 import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
 
-// Obtener la URL base del backend desde las variables de entorno
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
-console.log('API_URL configurada:', API_URL)  // Para debugging
+console.log('API_URL configurada:', API_URL)
 
-// Crear instancia de axios
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 })
 
-// Interceptor para agregar token a todas las peticiones
+// Request interceptor - agregar token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const authStore = useAuthStore()
+    const token = authStore.token
+    
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers['Authorization'] = `Bearer ${token}`
     }
-    console.log('Request:', config.method.toUpperCase(), config.baseURL + config.url)  // Para debugging
+    
+    console.log('Request:', config.method.toUpperCase(), config.url, config.data)
+    
     return config
   },
   (error) => {
+    console.error('Request error:', error)
     return Promise.reject(error)
   }
 )
 
-// Interceptor para manejar errores de respuesta
+// Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Response:', response.config.method.toUpperCase(), response.config.url, response.status)
+    return response
+  },
   (error) => {
-    console.error('API Error:', error.response?.status, error.config?.url)  // Para debugging
+    console.error('API Error:', error.response?.status, error.config?.url)
+    console.error('Error details:', error.response?.data)
+    console.error('Error message:', error.message)
+    
     if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      const authStore = useAuthStore()
+      authStore.logout()
       window.location.href = '/login'
     }
+    
     return Promise.reject(error)
   }
 )

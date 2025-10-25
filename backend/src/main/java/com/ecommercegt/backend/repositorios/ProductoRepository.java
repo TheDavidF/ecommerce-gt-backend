@@ -208,4 +208,12 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID>,
     @Query(value = "SELECT COUNT(*) FROM productos WHERE stock = 0", nativeQuery = true)
     Long countProductosSinStock();
 
+    
+    // Buscar por categoría y estado
+    Page<Producto> findByCategoriaIdAndEstado(Integer categoriaId, EstadoProducto estado, Pageable pageable);
+    
+    
+    // Buscar por nombre (búsqueda)
+    Page<Producto> findByNombreContainingIgnoreCaseAndEstado(String nombre, EstadoProducto estado, Pageable pageable);
+
 }

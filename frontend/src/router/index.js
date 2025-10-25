@@ -8,20 +8,18 @@ const routes = [
     component: () => import('../views/Home.vue'),
     meta: { requiresAuth: false }
   },
-
   {
     path: '/productos',
     name: 'Products',
     component: () => import('../views/Products.vue'),
     meta: { requiresAuth: false }
- },
- {
+  },
+  {
     path: '/productos/:id',
     name: 'ProductDetail',
     component: () => import('../views/ProductDetail.vue'),
     meta: { requiresAuth: false }
-},
-
+  },
   {
     path: '/login',
     name: 'Login',
@@ -34,22 +32,12 @@ const routes = [
     component: () => import('../views/Register.vue'),
     meta: { requiresAuth: false, hideForAuth: true }
   },
-  {
-    path: '/admin/dashboard',
-    name: 'AdminDashboard',
-    component: () => import('../views/admin/Dashboard.vue'),
-    meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
-  },
-  {
-    path: '/vendedor/dashboard',
-    name: 'VendedorDashboard',
-    component: () => import('../views/seller/Dashboard.vue'),
-    meta: { requiresAuth: true, roles: ['ROLE_VENDEDOR', 'ROLE_ADMIN'] }
-  },
+  
+  // Rutas protegidas
   {
     path: '/carrito',
-    name: 'Carrito',
-    component: () => import('../views/Carrito.vue'),
+    name: 'Cart',
+    component: () => import('../views/Carrito.vue'), // ← Usa el archivo que tengas
     meta: { requiresAuth: true }
   },
   {
@@ -70,6 +58,21 @@ const routes = [
     component: () => import('../views/Configuracion.vue'),
     meta: { requiresAuth: true }
   },
+  
+  // Rutas de roles
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: () => import('../views/admin/Dashboard.vue'),
+    meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
+  },
+  {
+    path: '/vendedor/dashboard',
+    name: 'VendedorDashboard',
+    component: () => import('../views/seller/Dashboard.vue'),
+    meta: { requiresAuth: true, roles: ['ROLE_VENDEDOR', 'ROLE_ADMIN'] }
+  },
+  
   // Páginas de error
   {
     path: '/403',

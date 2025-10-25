@@ -81,6 +81,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useCartStore } from '../../stores/cart'
 
 const props = defineProps({
   product: {
@@ -89,9 +90,8 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['add-to-cart'])
-
 const router = useRouter()
+const cartStore = useCartStore()
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('es-GT', {
@@ -105,7 +105,8 @@ const goToProduct = () => {
 }
 
 const addToCart = () => {
-  emit('add-to-cart', props.product)
+  // Agregar al carrito usando el store
+  cartStore.addItem(props.product, 1)
 }
 </script>
 

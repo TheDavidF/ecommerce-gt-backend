@@ -180,6 +180,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../stores/product'
+import { useCartStore } from '../stores/cart'
 import NavBar from '../components/layout/NavBar.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import { useToast } from 'vue-toastification'
@@ -188,6 +189,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const productStore = useProductStore()
+const cartStore = useCartStore()
 
 const quantity = ref(1)
 
@@ -223,8 +225,11 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = () => {
-  toast.success(`${quantity.value} ${product.value.nombre} agregado(s) al carrito`)
-  // TODO: Implementar store de carrito
+  // Agregar al carrito usando el store
+  cartStore.addItem(product.value, quantity.value)
+  
+  // Opcional: redirigir al carrito
+  // router.push('/carrito')
 }
 
 onMounted(async () => {
