@@ -1,118 +1,111 @@
 <template>
-  <v-card class="mb-3" elevation="2">
-    <v-card-title class="d-flex justify-space-between align-center">
-      <div>
-        <v-chip :color="obtenerColorEstado(pedido.estado)" size="small" class="mr-2">
+  <div class="bg-white rounded-lg shadow-md border border-gray-200 mb-4 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span
+          :class="[
+            'px-3 py-1 rounded-full text-xs font-semibold',
+            obtenerClaseEstado(pedido.estado)
+          ]"
+        >
           {{ pedido.estado }}
-        </v-chip>
-        <span class="text-h6">{{ pedido.numeroOrden }}</span>
+        </span>
+        <h3 class="text-lg font-bold text-gray-800">{{ pedido.numeroOrden }}</h3>
       </div>
-      <v-chip color="primary" variant="outlined">
+      <div class="text-xl font-bold text-blue-600">
         Q{{ pedido.total.toFixed(2) }}
-      </v-chip>
-    </v-card-title>
+      </div>
+    </div>
 
-    <v-card-text>
-      <v-row>
+    <!-- Body -->
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Información del cliente -->
-        <v-col cols="12" md="6">
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-account</v-icon>
-            <strong>Cliente:</strong> {{ pedido.usuarioNombre }}
+        <div class="space-y-3">
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[120px]">Cliente:</span>
+            <span class="text-gray-800">{{ pedido.usuarioNombre }}</span>
           </div>
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-email</v-icon>
-            {{ pedido.usuarioEmail }}
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[120px]">Email:</span>
+            <span class="text-gray-800">{{ pedido.usuarioEmail }}</span>
           </div>
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-phone</v-icon>
-            {{ pedido.telefonoContacto }}
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[120px]">Teléfono:</span>
+            <span class="text-gray-800">{{ pedido.telefonoContacto }}</span>
           </div>
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
-            {{ pedido.direccionEnvio }}
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[120px]">Dirección:</span>
+            <span class="text-gray-800">{{ pedido.direccionEnvio }}</span>
           </div>
-        </v-col>
+        </div>
 
-        <!-- Fechas -->
-        <v-col cols="12" md="6">
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-calendar</v-icon>
-            <strong>Fecha pedido:</strong> {{ formatearFecha(pedido.fechaPedido) }}
+        <!-- Fechas e información -->
+        <div class="space-y-3">
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[140px]">Fecha pedido:</span>
+            <span class="text-gray-800">{{ formatearFecha(pedido.fechaPedido) }}</span>
           </div>
-          <div v-if="pedido.fechaEntregaEstimada" class="mb-2">
-            <v-icon size="small" class="mr-2" :color="estaProximoVencer ? 'warning' : 'default'">
-              mdi-clock-alert
-            </v-icon>
-            <strong>Entrega estimada:</strong>
-            <span :class="{ 'text-warning': estaProximoVencer }">
+          <div v-if="pedido.fechaEntregaEstimada" class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[140px]">Entrega estimada:</span>
+            <span :class="estaProximoVencer ? 'text-orange-600 font-semibold' : 'text-gray-800'">
               {{ formatearFecha(pedido.fechaEntregaEstimada) }}
             </span>
           </div>
-          <div v-if="pedido.fechaEntrega" class="mb-2">
-            <v-icon size="small" class="mr-2" color="success">mdi-check-circle</v-icon>
-            <strong>Entregado:</strong> {{ formatearFecha(pedido.fechaEntrega) }}
+          <div v-if="pedido.fechaEntrega" class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[140px]">Entregado:</span>
+            <span class="text-green-600 font-semibold">{{ formatearFecha(pedido.fechaEntrega) }}</span>
           </div>
-          <div class="mb-2">
-            <v-icon size="small" class="mr-2">mdi-package-variant</v-icon>
-            <strong>Items:</strong> {{ pedido.cantidadTotalItems }}
+          <div class="flex items-start gap-2">
+            <span class="text-gray-500 font-medium min-w-[140px]">Items:</span>
+            <span class="text-gray-800">{{ pedido.cantidadTotalItems }}</span>
           </div>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
       <!-- Alerta si está próximo a vencer -->
-      <v-alert
+      <div
         v-if="estaProximoVencer"
-        type="warning"
-        variant="tonal"
-        density="compact"
-        class="mt-3"
+        class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center gap-2"
       >
-        <v-icon size="small">mdi-alert</v-icon>
-        Este pedido vence en menos de 24 horas
-      </v-alert>
-    </v-card-text>
+        <span class="text-orange-600"></span>
+        <span class="text-orange-800 text-sm font-medium">
+          Este pedido vence en menos de 24 horas
+        </span>
+      </div>
+    </div>
 
-    <v-card-actions>
-      <v-btn
-        color="primary"
-        variant="text"
-        size="small"
+    <!-- Footer con botones -->
+    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-wrap gap-2">
+      <button
         @click="$emit('ver-detalle', pedido)"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
       >
-        <v-icon start>mdi-eye</v-icon>
         Ver Detalle
-      </v-btn>
+      </button>
 
-      <v-btn
+      <button
         v-if="pedido.estado !== 'ENTREGADO' && pedido.estado !== 'CANCELADO'"
-        color="info"
-        variant="text"
-        size="small"
         @click="$emit('modificar-fecha', pedido)"
+        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
       >
-        <v-icon start>mdi-calendar-edit</v-icon>
         Modificar Fecha
-      </v-btn>
+      </button>
 
-      <v-btn
+      <button
         v-if="pedido.estado === 'ENVIADO'"
-        color="success"
-        variant="text"
-        size="small"
         @click="$emit('marcar-entregado', pedido)"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
       >
-        <v-icon start>mdi-check-circle</v-icon>
         Marcar Entregado
-      </v-btn>
-    </v-card-actions>
-  </v-card>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { format, parseISO, differenceInHours } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 const props = defineProps({
   pedido: {
@@ -123,22 +116,29 @@ const props = defineProps({
 
 defineEmits(['ver-detalle', 'modificar-fecha', 'marcar-entregado']);
 
-const obtenerColorEstado = (estado) => {
-  const colores = {
-    PENDIENTE: 'orange',
-    CONFIRMADO: 'blue',
-    EN_PREPARACION: 'indigo',
-    ENVIADO: 'green',
-    ENTREGADO: 'success',
-    CANCELADO: 'error'
+const obtenerClaseEstado = (estado) => {
+  const clases = {
+    PENDIENTE: 'bg-orange-100 text-orange-700',
+    CONFIRMADO: 'bg-blue-100 text-blue-700',
+    EN_PREPARACION: 'bg-indigo-100 text-indigo-700',
+    ENVIADO: 'bg-green-100 text-green-700',
+    ENTREGADO: 'bg-gray-100 text-gray-700',
+    CANCELADO: 'bg-red-100 text-red-700'
   };
-  return colores[estado] || 'grey';
+  return clases[estado] || 'bg-gray-100 text-gray-700';
 };
 
 const formatearFecha = (fecha) => {
   if (!fecha) return '-';
   try {
-    return format(parseISO(fecha), "dd/MM/yyyy HH:mm", { locale: es });
+    const date = new Date(fecha);
+    return date.toLocaleString('es-GT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   } catch (error) {
     return fecha;
   }
@@ -147,20 +147,12 @@ const formatearFecha = (fecha) => {
 const estaProximoVencer = computed(() => {
   if (!props.pedido.fechaEntregaEstimada) return false;
   try {
-    const horasRestantes = differenceInHours(
-      parseISO(props.pedido.fechaEntregaEstimada),
-      new Date()
-    );
+    const fechaEntrega = new Date(props.pedido.fechaEntregaEstimada);
+    const ahora = new Date();
+    const horasRestantes = (fechaEntrega - ahora) / (1000 * 60 * 60);
     return horasRestantes <= 24 && horasRestantes >= 0;
   } catch (error) {
     return false;
   }
 });
 </script>
-
-<style scoped>
-.text-warning {
-  color: #fb8c00;
-  font-weight: bold;
-}
-</style>

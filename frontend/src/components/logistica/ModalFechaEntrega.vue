@@ -1,68 +1,77 @@
 <template>
-  <v-dialog v-model="dialogVisible" max-width="500px" persistent>
-    <v-card>
-      <v-card-title class="text-h5">
-        <v-icon class="mr-2">mdi-calendar-edit</v-icon>
-        Modificar Fecha de Entrega
-      </v-card-title>
+  <Transition name="modal">
+    <div
+      v-if="modelValue"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      @click.self="cerrar"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-xl font-bold text-gray-800">
+            Modificar Fecha de Entrega
+          </h2>
+          <p v-if="pedido" class="text-sm text-gray-600 mt-1">
+            Pedido: {{ pedido.numeroOrden }}
+          </p>
+        </div>
 
-      <v-card-subtitle v-if="pedido" class="mt-2">
-        Pedido: {{ pedido.numeroOrden }}
-      </v-card-subtitle>
+        <!-- Body -->
+        <div class="px-6 py-4">
+          <form @submit.prevent="guardar">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Fecha y hora de entrega estimada
+              </label>
+              <input
+                v-model="fechaSeleccionada"
+                type="datetime-local"
+                :min="fechaMinima"
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
 
-      <v-card-text>
-        <v-form ref="formRef" v-model="formularioValido">
-          <v-text-field
-            v-model="fechaSeleccionada"
-            label="Fecha y hora de entrega estimada"
-            type="datetime-local"
-            :rules="[reglasValidacion.requerido, reglasValidacion.fechaFutura]"
-            variant="outlined"
-            prepend-icon="mdi-calendar-clock"
-            :min="fechaMinima"
-            required
-          ></v-text-field>
+            <div
+              v-if="pedido?.fechaEntregaEstimada"
+              class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4"
+            >
+              <p class="text-sm text-blue-800">
+                <strong>Fecha actual:</strong> {{ formatearFecha(pedido.fechaEntregaEstimada) }}
+              </p>
+            </div>
 
-          <v-alert
-            v-if="pedido?.fechaEntregaEstimada"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-3"
+            <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p class="text-sm text-red-800">{{ error }}</p>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          <button
+            @click="cerrar"
+            :disabled="cargando"
+            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
           >
-            <strong>Fecha actual:</strong> {{ formatearFecha(pedido.fechaEntregaEstimada) }}
-          </v-alert>
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="grey"
-          variant="text"
-          @click="cerrar"
-          :disabled="cargando"
-        >
-          Cancelar
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="elevated"
-          @click="guardar"
-          :loading="cargando"
-          :disabled="!formularioValido"
-        >
-          Guardar
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            Cancelar
+          </button>
+          <button
+            @click="guardar"
+            :disabled="cargando || !fechaSeleccionada"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+          >
+            <span v-if="cargando" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 const props = defineProps({
   modelValue: {
@@ -77,80 +86,102 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'guardar']);
 
-const dialogVisible = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
-
-const formRef = ref(null);
-const formularioValido = ref(false);
 const fechaSeleccionada = ref('');
 const cargando = ref(false);
+const error = ref('');
 
-// Fecha mínima: ahora + 1 hora
 const fechaMinima = computed(() => {
   const ahora = new Date();
   ahora.setHours(ahora.getHours() + 1);
   return ahora.toISOString().slice(0, 16);
 });
 
-// Reglas de validación
-const reglasValidacion = {
-  requerido: (value) => !!value || 'La fecha es requerida',
-  fechaFutura: (value) => {
-    if (!value) return true;
-    const fechaSelec = new Date(value);
-    const ahora = new Date();
-    return fechaSelec > ahora || 'La fecha debe ser futura';
-  }
-};
-
 const formatearFecha = (fecha) => {
   if (!fecha) return '-';
   try {
-    return format(parseISO(fecha), "dd/MM/yyyy HH:mm", { locale: es });
+    const date = new Date(fecha);
+    return date.toLocaleString('es-GT', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   } catch (error) {
     return fecha;
   }
 };
 
 const cerrar = () => {
-  dialogVisible.value = false;
-  fechaSeleccionada.value = '';
+  if (!cargando.value) {
+    emit('update:modelValue', false);
+    fechaSeleccionada.value = '';
+    error.value = '';
+  }
 };
 
 const guardar = async () => {
-  const { valid } = await formRef.value.validate();
-  if (!valid) return;
+  error.value = '';
+
+  if (!fechaSeleccionada.value) {
+    error.value = 'La fecha es requerida';
+    return;
+  }
+
+  const fechaSelec = new Date(fechaSeleccionada.value);
+  const ahora = new Date();
+
+  if (fechaSelec <= ahora) {
+    error.value = 'La fecha debe ser futura';
+    return;
+  }
 
   cargando.value = true;
   try {
-    // Convertir a formato ISO para el backend
-    const fechaISO = new Date(fechaSeleccionada.value).toISOString();
+    const fechaISO = fechaSelec.toISOString();
     emit('guardar', fechaISO);
     cerrar();
-  } catch (error) {
-    console.error('Error al guardar fecha:', error);
+  } catch (err) {
+    error.value = 'Error al guardar la fecha';
+    console.error('Error al guardar fecha:', err);
   } finally {
     cargando.value = false;
   }
 };
 
-// Cargar fecha actual del pedido cuando se abre el modal
 watch(() => props.modelValue, (isOpen) => {
   if (isOpen && props.pedido?.fechaEntregaEstimada) {
     try {
       const fecha = new Date(props.pedido.fechaEntregaEstimada);
       fechaSeleccionada.value = fecha.toISOString().slice(0, 16);
-    } catch (error) {
-      console.error('Error al parsear fecha:', error);
+    } catch (err) {
+      console.error('Error al parsear fecha:', err);
     }
   } else if (!isOpen) {
     fechaSeleccionada.value = '';
+    error.value = '';
   }
 });
 </script>
 
 <style scoped>
-/* Estilos adicionales si son necesarios */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .bg-white,
+.modal-leave-active .bg-white {
+  transition: transform 0.3s ease;
+}
+
+.modal-enter-from .bg-white,
+.modal-leave-to .bg-white {
+  transform: scale(0.9);
+}
 </style>

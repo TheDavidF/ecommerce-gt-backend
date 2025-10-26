@@ -102,6 +102,14 @@
                   >
                     Reportes
                   </router-link>
+
+                   <router-link
+                    to="/logistica"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Logística
+                  </router-link>
                 </div>
               </Transition>
             </div>
@@ -313,6 +321,14 @@
               >
                 Reportes
               </router-link>
+
+              <router-link
+                to="/logistica"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Logística
+              </router-link>
             </div>
 
             <router-link
@@ -437,7 +453,10 @@ const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     closeDropdown();
   }
-  if (adminDropdownRef.value && !adminDropdownRef.value.contains(event.target)) {
+  if (
+    adminDropdownRef.value &&
+    !adminDropdownRef.value.contains(event.target)
+  ) {
     closeAdminDropdown();
   }
 };

@@ -1,35 +1,36 @@
 <template>
-  <div class="filtro-pedidos">
-    <v-chip-group
-      v-model="estadoSeleccionado"
-      mandatory
-      selected-class="text-primary"
-      @update:model-value="cambiarFiltro"
-    >
-      <v-chip
+  <div class="mb-6">
+    <div class="flex flex-wrap gap-2">
+      <button
         v-for="estado in estados"
         :key="estado.valor"
-        :value="estado.valor"
-        :color="estado.color"
-        variant="outlined"
-        class="ma-1"
+        @click="cambiarFiltro(estado.valor)"
+        :class="[
+          'px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2',
+          modelValue === estado.valor
+            ? estado.bgActive + ' text-white shadow-lg'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+        ]"
       >
-        <v-icon start :icon="estado.icon"></v-icon>
-        {{ estado.label }}
-        <v-badge
-          v-if="contadores[estado.valor]"
-          :content="contadores[estado.valor]"
-          inline
-          color="primary"
-          class="ml-2"
-        ></v-badge>
-      </v-chip>
-    </v-chip-group>
+        <span>{{ estado.label }}</span>
+        <span
+          v-if="contadores[estado.valor] !== undefined"
+          :class="[
+            'text-xs font-bold px-2 py-1 rounded-full',
+            modelValue === estado.valor
+              ? 'bg-white ' + estado.textActive
+              : estado.bgBadge + ' ' + estado.textBadge
+          ]"
+        >
+          {{ contadores[estado.valor] }}
+        </span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { defineProps, defineEmits } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -44,52 +45,50 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const estadoSeleccionado = ref(props.modelValue);
-
 const estados = [
   {
     valor: 'TODOS',
     label: 'Todos',
-    icon: 'mdi-view-list',
-    color: 'grey'
+    bgActive: 'bg-gray-600',
+    textActive: 'text-gray-600',
+    bgBadge: 'bg-gray-100',
+    textBadge: 'text-gray-700'
   },
   {
     valor: 'PENDIENTE',
     label: 'Pendientes',
-    icon: 'mdi-clock-outline',
-    color: 'orange'
+    bgActive: 'bg-orange-600',
+    textActive: 'text-orange-600',
+    bgBadge: 'bg-orange-100',
+    textBadge: 'text-orange-700'
   },
   {
     valor: 'CONFIRMADO',
     label: 'Confirmados',
-    icon: 'mdi-check-circle-outline',
-    color: 'blue'
+    bgActive: 'bg-blue-600',
+    textActive: 'text-blue-600',
+    bgBadge: 'bg-blue-100',
+    textBadge: 'text-blue-700'
   },
   {
     valor: 'EN_PREPARACION',
     label: 'En Preparación',
-    icon: 'mdi-package-variant',
-    color: 'indigo'
+    bgActive: 'bg-indigo-600',
+    textActive: 'text-indigo-600',
+    bgBadge: 'bg-indigo-100',
+    textBadge: 'text-indigo-700'
   },
   {
     valor: 'ENVIADO',
     label: 'Enviados',
-    icon: 'mdi-truck-delivery',
-    color: 'green'
+    bgActive: 'bg-green-600',
+    textActive: 'text-green-600',
+    bgBadge: 'bg-green-100',
+    textBadge: 'text-green-700'
   }
 ];
 
 const cambiarFiltro = (valor) => {
   emit('update:modelValue', valor);
 };
-
-watch(() => props.modelValue, (newVal) => {
-  estadoSeleccionado.value = newVal;
-});
 </script>
-
-<style scoped>
-.filtro-pedidos {
-  margin-bottom: 20px;
-}
-</style>

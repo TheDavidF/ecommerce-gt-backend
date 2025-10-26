@@ -93,6 +93,13 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 
+  {
+    path: "/logistica",
+    name: "Logistica",
+    component: () => import("@/views/logistica/PedidosLogistica.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+
   // ==================== RUTAS DE MODERADOR ====================
   {
     path: "/moderador",
