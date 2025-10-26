@@ -16,16 +16,8 @@
         <div class="hidden md:flex items-center space-x-4">
           <!-- Si NO está logueado -->
           <template v-if="!authStore.isAuthenticated">
-            <router-link
-              to="/"
-              class="nav-link"
-            >
-              Inicio
-            </router-link>
-            <router-link
-              to="/productos"
-              class="nav-link"
-            >
+            <router-link to="/" class="nav-link"> Inicio </router-link>
+            <router-link to="/productos" class="nav-link">
               Productos
             </router-link>
             <router-link to="/login" class="btn-primary">
@@ -39,22 +31,80 @@
           <!-- Si está logueado -->
           <template v-else>
             <!-- Enlaces comunes -->
-            <router-link to="/" class="nav-link">
-              Inicio
-            </router-link>
+            <router-link to="/" class="nav-link"> Inicio </router-link>
 
             <router-link to="/productos" class="nav-link">
               Productos
             </router-link>
 
-            <!-- Link Admin -->
-            <router-link
+            <!-- Link Admin con dropdown -->
+            <div
               v-if="authStore.isAdmin"
-              to="/admin/usuarios"
-              class="nav-link-special admin"
+              class="relative"
+              ref="adminDropdownRef"
             >
-               Admin
-            </router-link>
+              <button
+                @click="toggleAdminDropdown"
+                class="nav-link-special admin flex items-center"
+              >
+                Admin
+                <svg
+                  class="w-4 h-4 ml-1 transition-transform"
+                  :class="{ 'rotate-180': showAdminDropdown }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </button>
+
+              <!-- Admin Dropdown Menu -->
+              <Transition name="dropdown">
+                <div v-if="showAdminDropdown" class="dropdown-menu">
+                  <router-link
+                    to="/admin/usuarios"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Usuarios
+                  </router-link>
+                  <router-link
+                    to="/admin/productos"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Productos
+                  </router-link>
+                  <router-link
+                    to="/admin/pedidos"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Pedidos
+                  </router-link>
+                  <router-link
+                    to="/admin/estadisticas"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Estadisticas
+                  </router-link>
+                  <router-link
+                    to="/admin/reportes"
+                    class="dropdown-item"
+                    @click="closeAdminDropdown"
+                  >
+                    Reportes
+                  </router-link>
+                </div>
+              </Transition>
+            </div>
 
             <!-- Link Moderador -->
             <router-link
@@ -62,7 +112,7 @@
               to="/moderador/productos"
               class="nav-link-special moderador"
             >
-               Moderación
+              Moderación
             </router-link>
 
             <!-- Link Vendedor -->
@@ -75,15 +125,9 @@
             </router-link>
 
             <!-- Carrito con contador -->
-            <router-link
-              to="/carrito"
-              class="nav-link relative"
-            >
-               Carrito
-              <span
-                v-if="cartStore.itemCount > 0"
-                class="cart-badge"
-              >
+            <router-link to="/carrito" class="nav-link relative">
+              Carrito
+              <span v-if="cartStore.itemCount > 0" class="cart-badge">
                 {{ cartStore.itemCount }}
               </span>
             </router-link>
@@ -94,10 +138,7 @@
 
             <!-- Usuario dropdown -->
             <div class="relative" ref="dropdownRef">
-              <button
-                @click="toggleDropdown"
-                class="user-button"
-              >
+              <button @click="toggleDropdown" class="user-button">
                 <span>{{ authStore.username }}</span>
                 <svg
                   class="w-4 h-4 transition-transform"
@@ -117,30 +158,27 @@
 
               <!-- Dropdown Menu -->
               <Transition name="dropdown">
-                <div
-                  v-if="showDropdown"
-                  class="dropdown-menu"
-                >
+                <div v-if="showDropdown" class="dropdown-menu">
                   <router-link
                     to="/perfil"
                     class="dropdown-item"
                     @click="closeDropdown"
                   >
-                     Mi Perfil
+                    Mi Perfil
                   </router-link>
                   <router-link
                     to="/configuracion"
                     class="dropdown-item"
                     @click="closeDropdown"
                   >
-                     Configuración
+                    Configuración
                   </router-link>
                   <hr class="my-1 border-gray-200" />
                   <button
                     @click="handleLogout"
                     class="dropdown-item text-red-600 hover:bg-red-50 w-full text-left"
                   >
-                     Cerrar Sesión
+                    Cerrar Sesión
                   </button>
                 </div>
               </Transition>
@@ -181,13 +219,12 @@
 
       <!-- Mobile Menu -->
       <Transition name="mobile-menu">
-        <div v-if="showMobileMenu" class="md:hidden pb-4 border-t border-gray-200 mt-2">
+        <div
+          v-if="showMobileMenu"
+          class="md:hidden pb-4 border-t border-gray-200 mt-2"
+        >
           <template v-if="!authStore.isAuthenticated">
-            <router-link
-              to="/"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
+            <router-link to="/" class="mobile-link" @click="closeMobileMenu">
               Inicio
             </router-link>
             <router-link
@@ -214,86 +251,131 @@
           </template>
 
           <template v-else>
-            <div class="px-3 py-2 text-sm text-gray-500 border-b border-gray-200 mb-2">
-              Hola, <strong class="text-blue-600">{{ authStore.username }}</strong>
+            <div
+              class="px-3 py-2 text-sm text-gray-500 border-b border-gray-200 mb-2"
+            >
+              Hola,
+              <strong class="text-blue-600">{{ authStore.username }}</strong>
             </div>
-            
+
             <router-link to="/" class="mobile-link" @click="closeMobileMenu">
-               Inicio
+              Inicio
             </router-link>
-            
-            <router-link to="/productos" class="mobile-link" @click="closeMobileMenu">
-               Productos
-            </router-link>
-            
-            <!-- Links especiales -->
+
             <router-link
-              v-if="authStore.isAdmin"
-              to="/admin/usuarios"
-              class="mobile-link-special admin"
+              to="/productos"
+              class="mobile-link"
               @click="closeMobileMenu"
             >
-               Administración
+              Productos
             </router-link>
-            
+
+            <!-- Admin links en mobile -->
+            <div
+              v-if="authStore.isAdmin"
+              class="border-t border-gray-200 mt-2 pt-2"
+            >
+              <div class="px-3 py-2 text-xs font-semibold text-red-600">
+                ADMINISTRACION
+              </div>
+              <router-link
+                to="/admin/usuarios"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Usuarios
+              </router-link>
+              <router-link
+                to="/admin/productos"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Productos
+              </router-link>
+              <router-link
+                to="/admin/pedidos"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Pedidos
+              </router-link>
+              <router-link
+                to="/admin/estadisticas"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Estadisticas
+              </router-link>
+              <router-link
+                to="/admin/reportes"
+                class="mobile-link-special admin"
+                @click="closeMobileMenu"
+              >
+                Reportes
+              </router-link>
+            </div>
+
             <router-link
               v-if="authStore.isModerador || authStore.isAdmin"
               to="/moderador/productos"
               class="mobile-link-special moderador"
               @click="closeMobileMenu"
             >
-               Moderación
+              Moderación
             </router-link>
-            
+
             <router-link
               v-if="authStore.isVendedor || authStore.isAdmin"
               to="/vendedor/dashboard"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-               Mis Productos
+              Mis Productos
             </router-link>
-            
+
             <router-link
               to="/carrito"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-               Carrito 
-              <span v-if="cartStore.itemCount > 0" class="text-red-600 font-bold ml-1">
+              Carrito
+              <span
+                v-if="cartStore.itemCount > 0"
+                class="text-red-600 font-bold ml-1"
+              >
                 ({{ cartStore.itemCount }})
               </span>
             </router-link>
-            
+
             <router-link
               to="/mis-pedidos"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-               Mis Pedidos
+              Mis Pedidos
             </router-link>
-            
+
             <router-link
               to="/perfil"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-               Mi Perfil
+              Mi Perfil
             </router-link>
-            
+
             <router-link
               to="/configuracion"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-               Configuración
+              Configuración
             </router-link>
-            
+
             <button
               @click="handleLogout"
               class="mobile-link text-red-600 hover:bg-red-50 w-full text-left"
             >
-               Cerrar Sesión
+              Cerrar Sesión
             </button>
           </template>
         </div>
@@ -303,60 +385,75 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import { useCartStore } from '../../stores/cart'
+import { ref, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../../stores/auth";
+import { useCartStore } from "../../stores/cart";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const cartStore = useCartStore()
+const router = useRouter();
+const authStore = useAuthStore();
+const cartStore = useCartStore();
 
-const showDropdown = ref(false)
-const showMobileMenu = ref(false)
-const dropdownRef = ref(null)
+const showDropdown = ref(false);
+const showMobileMenu = ref(false);
+const dropdownRef = ref(null);
+
+// Admin dropdown
+const showAdminDropdown = ref(false);
+const adminDropdownRef = ref(null);
 
 const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
+  showDropdown.value = !showDropdown.value;
+};
 
 const closeDropdown = () => {
-  showDropdown.value = false
-}
+  showDropdown.value = false;
+};
+
+const toggleAdminDropdown = () => {
+  showAdminDropdown.value = !showAdminDropdown.value;
+};
+
+const closeAdminDropdown = () => {
+  showAdminDropdown.value = false;
+};
 
 const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value
-}
+  showMobileMenu.value = !showMobileMenu.value;
+};
 
 const closeMobileMenu = () => {
-  showMobileMenu.value = false
-}
+  showMobileMenu.value = false;
+};
 
 const handleLogout = () => {
-  authStore.logout()
-  closeDropdown()
-  closeMobileMenu()
-  router.push('/')
-}
+  authStore.logout();
+  closeDropdown();
+  closeMobileMenu();
+  router.push("/");
+};
 
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
-    closeDropdown()
+    closeDropdown();
   }
-}
+  if (adminDropdownRef.value && !adminDropdownRef.value.contains(event.target)) {
+    closeAdminDropdown();
+  }
+};
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  
+  document.addEventListener("click", handleClickOutside);
+
   // Cargar carrito si está autenticado
   if (authStore.isAuthenticated) {
-    cartStore.fetchCart()
+    cartStore.fetchCart();
   }
-})
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <style scoped>

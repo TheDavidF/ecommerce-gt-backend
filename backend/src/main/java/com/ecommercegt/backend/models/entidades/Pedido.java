@@ -35,103 +35,107 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Pedido {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
+
     /**
      * Usuario que realizó el pedido
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
-    
+
     /**
      * Items del pedido (productos con sus cantidades)
      */
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> items = new ArrayList<>();
-    
+
     /**
      * Número de orden único (formato: PED-YYYYMMDD-####)
      * Ejemplo: PED-20251024-0001
      */
     @Column(name = "numero_orden", unique = true, nullable = false, length = 50)
     private String numeroOrden;
-    
+
     /**
      * Total del pedido (suma de subtotales de items)
+     * ✅ CORRECCIÓN: Campo montoTotal mapea a columna monto_total
      */
-    @Column(name ="monto_total", nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
-    
+    @Column(name = "monto_total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal montoTotal;
+
     /**
      * Estado actual del pedido
      */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "estado", nullable = false, length = 20)
     private EstadoPedido estado;
-    
+
     /**
      * Dirección de envío completa
      */
     @Column(name = "direccion_envio", nullable = false, length = 500)
     private String direccionEnvio;
-    
+
     /**
      * Teléfono de contacto para la entrega
      */
     @Column(name = "telefono_contacto", nullable = false, length = 20)
     private String telefonoContacto;
-    
+
     /**
      * Método de pago elegido
      * Ejemplos: EFECTIVO, TRANSFERENCIA, TARJETA, WALLET
      */
     @Column(name = "metodo_pago", nullable = false, length = 50)
     private String metodoPago;
-    
+
     /**
      * Notas adicionales del cliente
      */
-    @Column(length = 1000)
+    @Column(name = "notas", length = 1000)
     private String notas;
-    
+
     /**
      * Fecha en que se creó el pedido
      */
     @CreationTimestamp
     @Column(name = "fecha_pedido", nullable = false, updatable = false)
     private LocalDateTime fechaPedido;
-    
+
     /**
      * Última actualización del pedido (cambio de estado)
      */
     @UpdateTimestamp
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
-    
+
+    @Column(name = "fecha_entrega_estimada")
+    private LocalDateTime fechaEntregaEstimada;
+
     /**
      * Fecha de cancelación (si aplica)
      */
     @Column(name = "fecha_cancelacion")
     private LocalDateTime fechaCancelacion;
-    
+
     /**
      * Motivo de cancelación (si aplica)
      */
     @Column(name = "motivo_cancelacion", length = 500)
     private String motivoCancelacion;
-    
+
     /**
      * Fecha de entrega (cuando se marca como ENTREGADO)
      */
     @Column(name = "fecha_entrega")
     private LocalDateTime fechaEntrega;
-    
+
     // ==================== MÉTODOS DE UTILIDAD ====================
-    
+
     /**
      * Agregar item al pedido
      */
@@ -139,16 +143,17 @@ public class Pedido {
         items.add(item);
         item.setPedido(this);
     }
-    
+
     /**
      * Calcular total del pedido (suma de subtotales)
+     * ✅ ACTUALIZADO: Usar montoTotal
      */
     public void calcularTotal() {
-        this.total = items.stream()
+        this.montoTotal = items.stream()
                 .map(ItemPedido::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-    
+
     /**
      * Obtener cantidad total de items
      */
@@ -157,14 +162,14 @@ public class Pedido {
                 .mapToInt(ItemPedido::getCantidad)
                 .sum();
     }
-    
+
     /**
      * Verificar si el pedido puede ser cancelado
      */
     public boolean puedeSerCancelado() {
         return estado.puedeSerCancelado();
     }
-    
+
     /**
      * Cancelar pedido
      */
@@ -176,7 +181,7 @@ public class Pedido {
         this.fechaCancelacion = LocalDateTime.now();
         this.motivoCancelacion = motivo;
     }
-    
+
     /**
      * Marcar como entregado
      */
@@ -184,20 +189,41 @@ public class Pedido {
         this.estado = EstadoPedido.ENTREGADO;
         this.fechaEntrega = LocalDateTime.now();
     }
-    
+
     /**
      * Cambiar estado del pedido (con validación)
      */
     public void cambiarEstado(EstadoPedido nuevoEstado) {
         if (!this.estado.puedeTransicionarA(nuevoEstado)) {
             throw new RuntimeException(
-                String.format("No se puede cambiar de %s a %s", this.estado, nuevoEstado)
-            );
+                    String.format("No se puede cambiar de %s a %s", this.estado, nuevoEstado));
         }
         this.estado = nuevoEstado;
-        
+
         if (nuevoEstado == EstadoPedido.ENTREGADO) {
             this.fechaEntrega = LocalDateTime.now();
         }
+    }
+
+    // ==================== MÉTODOS DE COMPATIBILIDAD ====================
+
+    /**
+     * Alias para getMontoTotal() para compatibilidad
+     * 
+     * @deprecated Usar getMontoTotal() en su lugar
+     */
+    @Deprecated
+    public BigDecimal getTotal() {
+        return this.montoTotal;
+    }
+
+    /**
+     * Alias para setMontoTotal() para compatibilidad
+     * 
+     * @deprecated Usar setMontoTotal() en su lugar
+     */
+    @Deprecated
+    public void setTotal(BigDecimal total) {
+        this.montoTotal = total;
     }
 }

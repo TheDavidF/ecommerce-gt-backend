@@ -165,7 +165,8 @@ public class DashboardService {
         List<ProductoMasVendidoResponse> productos = new ArrayList<>();
 
         try {
-            List<Object[]> resultados = itemPedidoRepository.findProductosMasVendidos(limite);
+
+            List<Object[]> resultados = itemPedidoRepository.findProductosMasVendidosConLimite(limite);
 
             for (Object[] row : resultados) {
                 ProductoMasVendidoResponse producto = new ProductoMasVendidoResponse();
@@ -179,6 +180,7 @@ public class DashboardService {
                 productos.add(producto);
             }
         } catch (Exception e) {
+            System.err.println("Error al obtener productos más vendidos: " + e.getMessage());
             e.printStackTrace();
         }
 

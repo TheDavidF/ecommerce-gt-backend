@@ -15,7 +15,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
+import com.ecommercegt.backend.dto.request.ModificarFechaEntregaRequest;
+import com.ecommercegt.backend.models.enums.EstadoPedido;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -26,10 +29,10 @@ import java.util.UUID;
 @RequestMapping("/api/pedidos")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class PedidoController {
-    
+
     @Autowired
     private PedidoService pedidoService;
-    
+
     /**
      * Crear pedido desde el carrito del usuario autenticado
      * POST /api/pedidos/crear-desde-carrito
@@ -53,7 +56,7 @@ public class PedidoController {
                     .body(new MessageResponse("Error al crear pedido: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Obtener mis pedidos (usuario autenticado)
      * GET /api/pedidos
@@ -73,7 +76,7 @@ public class PedidoController {
         Page<PedidoResponse> pedidos = pedidoService.obtenerMisPedidos(pageable);
         return ResponseEntity.ok(pedidos);
     }
-    
+
     /**
      * Obtener detalle de un pedido
      * GET /api/pedidos/{id}
@@ -93,7 +96,7 @@ public class PedidoController {
                     .body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     /**
      * Actualizar estado de un pedido
      * PUT /api/pedidos/{id}/estado
@@ -119,7 +122,7 @@ public class PedidoController {
                     .body(new MessageResponse("Error al actualizar estado: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Cancelar un pedido
      * DELETE /api/pedidos/{id}/cancelar
@@ -143,7 +146,7 @@ public class PedidoController {
                     .body(new MessageResponse("Error al cancelar pedido: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Obtener pedidos que contengan mis productos (como vendedor)
      * GET /api/pedidos/vendedor
@@ -161,7 +164,7 @@ public class PedidoController {
         Page<PedidoResponse> pedidos = pedidoService.obtenerPedidosVendedor(pageable);
         return ResponseEntity.ok(pedidos);
     }
-    
+
     /**
      * Obtener todos los pedidos (solo ADMIN)
      * GET /api/pedidos/admin/todos
@@ -177,7 +180,7 @@ public class PedidoController {
         Page<PedidoResponse> pedidos = pedidoService.obtenerTodosPedidos(pageable);
         return ResponseEntity.ok(pedidos);
     }
-    
+
     /**
      * Obtener resumen de pedidos del usuario
      * GET /api/pedidos/resumen
@@ -193,5 +196,56 @@ public class PedidoController {
     public ResponseEntity<ResumenPedidosResponse> obtenerResumenPedidos() {
         ResumenPedidosResponse resumen = pedidoService.obtenerResumenPedidos();
         return ResponseEntity.ok(resumen);
+    }
+
+    @GetMapping("/en-curso")
+    @PreAuthorize("hasAnyAuthority('LOGISTICA', 'ADMIN')")
+    public ResponseEntity<List<PedidoResponse>> obtenerPedidosEnCurso() {
+        List<PedidoResponse> pedidos = pedidoService.obtenerPedidosEnCurso();
+        return ResponseEntity.ok(pedidos);
+    }
+
+    @GetMapping("/proximos-vencer")
+    @PreAuthorize("hasAnyAuthority('LOGISTICA', 'ADMIN')")
+    public ResponseEntity<List<PedidoResponse>> obtenerPedidosProximosVencer() {
+        List<PedidoResponse> pedidos = pedidoService.obtenerPedidosProximosVencer();
+        return ResponseEntity.ok(pedidos);
+    }
+
+    @PutMapping("/{id}/fecha-entrega")
+    @PreAuthorize("hasAnyAuthority('LOGISTICA', 'ADMIN')")
+    public ResponseEntity<?> modificarFechaEntrega(
+            @PathVariable UUID id,
+            @Valid @RequestBody ModificarFechaEntregaRequest request) {
+        try {
+            PedidoResponse pedido = pedidoService.modificarFechaEntrega(
+                    id,
+                    request.getFechaEntregaEstimada());
+            return ResponseEntity.ok(pedido);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error al modificar fecha: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Marcar pedido como entregado
+     * PUT /api/pedidos/{id}/marcar-entregado
+     * 
+     * Cambia el estado a ENTREGADO y registra la fecha actual como fecha de entrega
+     * Solo puede aplicarse a pedidos en estado EN_CAMINO
+     * 
+     * Requiere rol LOGISTICA o ADMIN
+     */
+    @PutMapping("/{id}/marcar-entregado")
+    @PreAuthorize("hasAnyAuthority('LOGISTICA', 'ADMIN')")
+    public ResponseEntity<?> marcarComoEntregado(@PathVariable UUID id) {
+        try {
+            PedidoResponse pedido = pedidoService.marcarComoEntregado(id);
+            return ResponseEntity.ok(pedido);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error al marcar como entregado: " + e.getMessage()));
+        }
     }
 }

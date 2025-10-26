@@ -6,13 +6,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface SolicitudModeracionRepository extends JpaRepository<SolicitudModeracion, Integer> {
+public interface SolicitudModeracionRepository extends JpaRepository<SolicitudModeracion, UUID> {
     
     // Buscar solicitudes por estado
     Page<SolicitudModeracion> findByEstado(EstadoSolicitudModeracion estado, Pageable pageable);
@@ -33,5 +34,8 @@ public interface SolicitudModeracionRepository extends JpaRepository<SolicitudMo
            "LEFT JOIN FETCH p.imagenes " +
            "JOIN FETCH s.solicitante " +
            "WHERE s.estado = :estado")
-    Page<SolicitudModeracion> findByEstadoWithDetails(EstadoSolicitudModeracion estado, Pageable pageable);
+    Page<SolicitudModeracion> findByEstadoWithDetails(@Param("estado") EstadoSolicitudModeracion estado, Pageable pageable);
+    
+    //  CONTAR SOLICITUDES POR ESTADO
+    Long countByEstado(EstadoSolicitudModeracion estado);
 }

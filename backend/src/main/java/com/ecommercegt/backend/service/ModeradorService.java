@@ -32,7 +32,7 @@ public class ModeradorService {
      */
     @Transactional(readOnly = true)
     public Page<ProductoModeracionResponse> listarSolicitudesPendientes(Pageable pageable) {
-        Page<SolicitudModeracion> solicitudes = solicitudRepository.findByEstadoWithDetails(
+        Page<SolicitudModeracion> solicitudes = solicitudRepository.findByEstado(
             EstadoSolicitudModeracion.PENDIENTE, 
             pageable
         );
@@ -78,7 +78,7 @@ public class ModeradorService {
         SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
         
-        if (solicitud.getEstado() == EstadoSolicitudModeracion.APROBADA) {
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.APROBADO) {
             throw new RuntimeException("La solicitud ya está aprobada");
         }
         
@@ -86,10 +86,10 @@ public class ModeradorService {
         Usuario moderador = obtenerUsuarioActual();
         
         // Actualizar solicitud
-        solicitud.setEstado(EstadoSolicitudModeracion.APROBADA);
+        solicitud.setEstado(EstadoSolicitudModeracion.APROBADO);
         solicitud.setModerador(moderador);
         solicitud.setFechaRevision(LocalDateTime.now());
-        solicitud.setRazon(null); // Limpiar razón de rechazo si había
+        solicitud.setComentarioModerador(null);
         
         // Actualizar producto
         Producto producto = solicitud.getProducto();
@@ -100,8 +100,6 @@ public class ModeradorService {
         solicitudRepository.save(solicitud);
         productoRepository.save(producto);
         
-        // TODO: Enviar notificación al vendedor
-        
         return convertirSolicitudAResponse(solicitud);
     }
     
@@ -109,17 +107,17 @@ public class ModeradorService {
      * Rechazar solicitud de moderación
      */
     @Transactional
-    public ProductoModeracionResponse rechazarSolicitud(UUID productoId, String razon) {
-        // Validar razón
-        if (razon == null || razon.trim().isEmpty()) {
-            throw new RuntimeException("Debe proporcionar una razón para rechazar el producto");
+    public ProductoModeracionResponse rechazarSolicitud(UUID productoId, String motivo) {
+        // Validar motivo
+        if (motivo == null || motivo.trim().isEmpty()) {
+            throw new RuntimeException("Debe proporcionar un motivo para rechazar el producto");
         }
         
         // Buscar la solicitud
         SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
         
-        if (solicitud.getEstado() == EstadoSolicitudModeracion.RECHAZADA) {
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.RECHAZADO) {
             throw new RuntimeException("La solicitud ya está rechazada");
         }
         
@@ -127,10 +125,10 @@ public class ModeradorService {
         Usuario moderador = obtenerUsuarioActual();
         
         // Actualizar solicitud
-        solicitud.setEstado(EstadoSolicitudModeracion.RECHAZADA);
+        solicitud.setEstado(EstadoSolicitudModeracion.RECHAZADO);
         solicitud.setModerador(moderador);
         solicitud.setFechaRevision(LocalDateTime.now());
-        solicitud.setRazon(razon);
+        solicitud.setComentarioModerador(motivo);
         
         // Actualizar producto
         Producto producto = solicitud.getProducto();
@@ -141,9 +139,18 @@ public class ModeradorService {
         solicitudRepository.save(solicitud);
         productoRepository.save(producto);
         
-        // TODO: Enviar notificación al vendedor
-        
         return convertirSolicitudAResponse(solicitud);
+    }
+    
+    /**
+     * Contar solicitudes por estado
+     */
+    public Long contarSolicitudesPorEstado(EstadoSolicitudModeracion estado) {
+        try {
+            return solicitudRepository.countByEstado(estado);
+        } catch (Exception e) {
+            return 0L;
+        }
     }
     
     /**
@@ -155,50 +162,178 @@ public class ModeradorService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
     
-    /**
+        /**
      * Convertir SolicitudModeracion a ProductoModeracionResponse
      */
     private ProductoModeracionResponse convertirSolicitudAResponse(SolicitudModeracion solicitud) {
         Producto producto = solicitud.getProducto();
         ProductoModeracionResponse response = new ProductoModeracionResponse();
         
-        response.setId(producto.getId());
-        response.setNombre(producto.getNombre());
-        response.setDescripcion(producto.getDescripcion());
-        response.setPrecio(producto.getPrecio());
-        response.setStock(producto.getStock());
+        // ==================== DATOS DE LA SOLICITUD ====================
+        response.setId(solicitud.getId());
+        response.setEstado(solicitud.getEstado().name());
+        response.setFechaSolicitud(solicitud.getFechaSolicitud());
+        response.setFechaRevision(solicitud.getFechaRevision());
+        response.setComentarioModerador(solicitud.getComentarioModerador());
         
-        // Imagen principal
+        // ==================== DATOS DEL PRODUCTO ====================
+        response.setProductoId(producto.getId());
+        
+        // Obtener imagen principal
+        String imagenUrl = null;
         if (producto.getImagenes() != null && !producto.getImagenes().isEmpty()) {
-            producto.getImagenes().stream()
+            imagenUrl = producto.getImagenes().stream()
                     .filter(img -> img.getEsPrincipal())
                     .findFirst()
-                    .ifPresent(img -> response.setImagenUrl(img.getUrlImagen()));
-            
-            // Si no hay principal, tomar la primera
-            if (response.getImagenUrl() == null) {
-                response.setImagenUrl(producto.getImagenes().get(0).getUrlImagen());
-            }
+                    .map(img -> img.getUrlImagen())
+                    .orElse(producto.getImagenes().get(0).getUrlImagen());
         }
         
-        response.setEstado(producto.getEstado());
-        response.setMotivoRechazo(solicitud.getRazon());
-        response.setFechaCreacion(producto.getFechaCreacion());
-        response.setFechaActualizacion(producto.getFechaActualizacion());
+        // Obtener nombre de categoría
+        String categoriaNombre = producto.getCategoria() != null 
+                ? producto.getCategoria().getNombre() 
+                : null;
         
-        // Categoría
-        if (producto.getCategoria() != null) {
-            response.setCategoriaId(producto.getCategoria().getId());
-            response.setCategoriaNombre(producto.getCategoria().getNombre());
-        }
+        // Obtener estado del producto como String
+        String estadoProducto = producto.getEstado() != null 
+                ? producto.getEstado().name() 
+                : null;
         
-        // Vendedor (solicitante)
+        // Crear objeto ProductoInfo con TODOS los parámetros
+        ProductoModeracionResponse.ProductoInfo productoInfo = 
+                new ProductoModeracionResponse.ProductoInfo(
+                    producto.getId(),           // UUID id
+                    producto.getNombre(),       // String nombre
+                    producto.getDescripcion(),  // String descripcion
+                    producto.getPrecio(),       // BigDecimal precio
+                    producto.getStock(),        // Integer stock
+                    imagenUrl,                  // String imagenUrl
+                    categoriaNombre,            // String categoriaNombre
+                    estadoProducto              // String estado
+                );
+        
+        response.setProducto(productoInfo);
+        
+        // ==================== DATOS DEL SOLICITANTE ====================
         if (solicitud.getSolicitante() != null) {
-            response.setVendedorId(solicitud.getSolicitante().getId());
-            response.setVendedorNombre(solicitud.getSolicitante().getNombreCompleto());
-            response.setVendedorEmail(solicitud.getSolicitante().getCorreo());
+            response.setSolicitanteId(solicitud.getSolicitante().getId());
+            response.setSolicitanteNombre(solicitud.getSolicitante().getNombreCompleto());
+        }
+        
+        // ==================== DATOS DEL MODERADOR ====================
+        if (solicitud.getModerador() != null) {
+            response.setModeradorId(solicitud.getModerador().getId());
+            response.setModeradorNombre(solicitud.getModerador().getNombreCompleto());
         }
         
         return response;
+    }
+
+        /**
+     * Aprobar solicitud por ID de solicitud (no de producto)
+     */
+    @Transactional
+    public ProductoModeracionResponse aprobarSolicitudPorId(UUID solicitudId) {
+        // Buscar la solicitud por ID
+        SolicitudModeracion solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+        
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.APROBADO) {
+            throw new RuntimeException("La solicitud ya está aprobada");
+        }
+        
+        // Obtener el moderador actual
+        Usuario moderador = obtenerUsuarioActual();
+        
+        // Actualizar solicitud
+        solicitud.setEstado(EstadoSolicitudModeracion.APROBADO);
+        solicitud.setModerador(moderador);
+        solicitud.setFechaRevision(LocalDateTime.now());
+        solicitud.setComentarioModerador(null);
+        
+        // Actualizar producto
+        Producto producto = solicitud.getProducto();
+        producto.setEstado(EstadoProducto.APROBADO);
+        producto.setFechaActualizacion(LocalDateTime.now());
+        
+        // Guardar cambios
+        solicitudRepository.save(solicitud);
+        productoRepository.save(producto);
+        
+        return convertirSolicitudAResponse(solicitud);
+    }
+    
+    /**
+     * Rechazar solicitud por ID de solicitud (no de producto)
+     */
+    @Transactional
+    public ProductoModeracionResponse rechazarSolicitudPorId(UUID solicitudId, String motivo) {
+        // Validar motivo
+        if (motivo == null || motivo.trim().isEmpty()) {
+            throw new RuntimeException("Debe proporcionar un motivo para rechazar el producto");
+        }
+        
+        // Buscar la solicitud por ID
+        SolicitudModeracion solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+        
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.RECHAZADO) {
+            throw new RuntimeException("La solicitud ya está rechazada");
+        }
+        
+        // Obtener el moderador actual
+        Usuario moderador = obtenerUsuarioActual();
+        
+        // Actualizar solicitud
+        solicitud.setEstado(EstadoSolicitudModeracion.RECHAZADO);
+        solicitud.setModerador(moderador);
+        solicitud.setFechaRevision(LocalDateTime.now());
+        solicitud.setComentarioModerador(motivo);
+        
+        // Actualizar producto
+        Producto producto = solicitud.getProducto();
+        producto.setEstado(EstadoProducto.RECHAZADO);
+        producto.setFechaActualizacion(LocalDateTime.now());
+        
+        // Guardar cambios
+        solicitudRepository.save(solicitud);
+        productoRepository.save(producto);
+        
+        return convertirSolicitudAResponse(solicitud);
+    }
+    
+    /**
+     * Solicitar cambios por ID de solicitud (no de producto)
+     */
+    @Transactional
+    public ProductoModeracionResponse solicitarCambiosPorId(UUID solicitudId, String comentario) {
+        // Validar comentario
+        if (comentario == null || comentario.trim().isEmpty()) {
+            throw new RuntimeException("Debe proporcionar un comentario");
+        }
+        
+        // Buscar la solicitud por ID
+        SolicitudModeracion solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+        
+        // Obtener el moderador actual
+        Usuario moderador = obtenerUsuarioActual();
+        
+        // Actualizar solicitud
+        solicitud.setEstado(EstadoSolicitudModeracion.CAMBIOS_SOLICITADOS);
+        solicitud.setModerador(moderador);
+        solicitud.setFechaRevision(LocalDateTime.now());
+        solicitud.setComentarioModerador(comentario);
+        
+        // Actualizar producto (mantener en PENDIENTE_REVISION)
+        Producto producto = solicitud.getProducto();
+        producto.setEstado(EstadoProducto.PENDIENTE_REVISION);
+        producto.setFechaActualizacion(LocalDateTime.now());
+        
+        // Guardar cambios
+        solicitudRepository.save(solicitud);
+        productoRepository.save(producto);
+        
+        return convertirSolicitudAResponse(solicitud);
     }
 }

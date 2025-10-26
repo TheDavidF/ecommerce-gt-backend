@@ -17,8 +17,8 @@ import java.util.UUID;
 public class SolicitudModeracion {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;  // ✅ CAMBIO: Integer → UUID
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id")
@@ -39,14 +39,17 @@ public class SolicitudModeracion {
     private LocalDateTime fechaRevision;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "estado", nullable = false, length = 30)
     private EstadoSolicitudModeracion estado;
     
-    @Column(name = "razon", columnDefinition = "TEXT")
-    private String razon;
+    @Column(name = "comentario_moderador", columnDefinition = "TEXT")
+    private String comentarioModerador;  // ✅ CAMBIO: razon → comentarioModerador
     
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
         if (fechaSolicitud == null) {
             fechaSolicitud = LocalDateTime.now();
         }

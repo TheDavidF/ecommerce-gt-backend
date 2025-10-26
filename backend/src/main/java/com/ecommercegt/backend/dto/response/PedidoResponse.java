@@ -110,6 +110,8 @@ public class PedidoResponse {
      * Fecha de entrega (si aplica)
      */
     private LocalDateTime fechaEntrega;
+
+    private LocalDateTime fechaEntregaEstimada;
     
     /**
      * Indica si el pedido puede ser cancelado

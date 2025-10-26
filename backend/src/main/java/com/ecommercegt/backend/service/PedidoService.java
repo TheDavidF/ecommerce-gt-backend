@@ -15,13 +15,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Servicio de Pedidos
@@ -418,6 +418,7 @@ public class PedidoService {
         response.setFechaCancelacion(pedido.getFechaCancelacion());
         response.setMotivoCancelacion(pedido.getMotivoCancelacion());
         response.setFechaEntrega(pedido.getFechaEntrega());
+        response.setFechaEntregaEstimada(pedido.getFechaEntregaEstimada());
         response.setPuedeSerCancelado(pedido.puedeSerCancelado());
         response.setEsFinal(pedido.getEstado().esFinal());
 
@@ -438,5 +439,77 @@ public class PedidoService {
         response.setPrecioUnitario(item.getPrecioUnitario());
         response.setSubtotal(item.getSubtotal());
         return response;
+    }
+
+    /**
+     * Obtener pedidos en curso (PENDIENTE, CONFIRMADO, EN_PREPARACION, ENVIADO)
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> obtenerPedidosEnCurso() {
+        List<EstadoPedido> estadosEnCurso = Arrays.asList(
+                EstadoPedido.PENDIENTE,
+                EstadoPedido.CONFIRMADO,
+                EstadoPedido.EN_PREPARACION,
+                EstadoPedido.ENVIADO);
+
+        List<Pedido> pedidos = pedidoRepository.findByEstadoInOrderByFechaPedidoDesc(estadosEnCurso);
+
+        return pedidos.stream()
+                .map(this::convertirAResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener pedidos próximos a vencer (fecha estimada en menos de 24h)
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> obtenerPedidosProximosVencer() {
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime limite = ahora.plusHours(24);
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosProximosVencer(ahora, limite);
+
+        return pedidos.stream()
+                .map(this::convertirAResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Modificar fecha de entrega estimada
+     */
+    @Transactional
+    public PedidoResponse modificarFechaEntrega(UUID pedidoId, LocalDateTime nuevaFecha) {
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        // Validar que la nueva fecha sea futura
+        if (nuevaFecha.isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("La fecha de entrega debe ser futura");
+        }
+
+        pedido.setFechaEntregaEstimada(nuevaFecha);
+        pedidoRepository.save(pedido);
+
+        return convertirAResponse(pedido);
+    }
+
+    /**
+     * Marcar pedido como entregado
+     */
+    @Transactional
+    public PedidoResponse marcarComoEntregado(UUID pedidoId) {
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        // Solo se puede marcar como entregado si está ENVIADO
+        if (pedido.getEstado() != EstadoPedido.ENVIADO) {
+            throw new RuntimeException("Solo se pueden marcar como entregados los pedidos enviados");
+        }
+
+        pedido.setEstado(EstadoPedido.ENTREGADO);
+        pedido.setFechaEntrega(LocalDateTime.now());
+        pedidoRepository.save(pedido);
+
+        return convertirAResponse(pedido);
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
@@ -52,4 +53,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     @Query("SELECT u FROM Usuario u JOIN u.roles r WHERE r.nombre = :rolNombre")
     Page<Usuario> findByRolesNombre(@Param("rolNombre") RolNombre rolNombre, Pageable pageable);
+
+     @Query("SELECT r.nombre, COUNT(u) " +
+           "FROM Usuario u " +
+           "JOIN u.roles r " +
+           "GROUP BY r.nombre")
+    List<Object[]> countUsuariosPorRol();
+
+    Long countByActivo(Boolean activo);
 }
