@@ -27,7 +27,7 @@ public class ProductoModeracionResponse {
     private LocalDateTime fechaActualizacion;
     
     // Información de la categoría
-    private UUID categoriaId;
+    private Integer categoriaId;
     private String categoriaNombre;
     
     // Información del vendedor/usuario

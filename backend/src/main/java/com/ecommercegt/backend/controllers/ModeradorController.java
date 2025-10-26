@@ -24,15 +24,15 @@ public class ModeradorController {
     private final ModeradorService moderadorService;
     
     /**
-     * Listar productos pendientes de revisión
-     * GET /api/moderador/productos/pendientes
+     * Listar solicitudes pendientes de revisión
+     * GET /api/moderador/solicitudes/pendientes
      */
-    @GetMapping("/productos/pendientes")
+    @GetMapping("/solicitudes/pendientes")
     @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
-    public ResponseEntity<Page<ProductoModeracionResponse>> listarProductosPendientes(
+    public ResponseEntity<Page<ProductoModeracionResponse>> listarSolicitudesPendientes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "fechaCreacion") String sortBy,
+            @RequestParam(defaultValue = "fechaSolicitud") String sortBy,
             @RequestParam(defaultValue = "asc") String direction
     ) {
         Sort sort = direction.equalsIgnoreCase("desc") 
@@ -40,22 +40,22 @@ public class ModeradorController {
             : Sort.by(sortBy).ascending();
         
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ProductoModeracionResponse> productos = moderadorService.listarProductosPendientes(pageable);
+        Page<ProductoModeracionResponse> solicitudes = moderadorService.listarSolicitudesPendientes(pageable);
         
-        return ResponseEntity.ok(productos);
+        return ResponseEntity.ok(solicitudes);
     }
     
     /**
-     * Listar todos los productos con filtro por estado
-     * GET /api/moderador/productos?estado=APROBADO
+     * Listar todas las solicitudes con filtro por estado
+     * GET /api/moderador/solicitudes?estado=APROBADA
      */
-    @GetMapping("/productos")
+    @GetMapping("/solicitudes")
     @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
-    public ResponseEntity<Page<ProductoModeracionResponse>> listarProductos(
+    public ResponseEntity<Page<ProductoModeracionResponse>> listarSolicitudes(
             @RequestParam(required = false) String estado,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "fechaCreacion") String sortBy,
+            @RequestParam(defaultValue = "fechaSolicitud") String sortBy,
             @RequestParam(defaultValue = "desc") String direction
     ) {
         Sort sort = direction.equalsIgnoreCase("desc") 
@@ -63,57 +63,61 @@ public class ModeradorController {
             : Sort.by(sortBy).ascending();
         
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ProductoModeracionResponse> productos = moderadorService.listarProductos(estado, pageable);
+        Page<ProductoModeracionResponse> solicitudes = moderadorService.listarSolicitudes(estado, pageable);
         
-        return ResponseEntity.ok(productos);
+        return ResponseEntity.ok(solicitudes);
     }
     
     /**
-     * Obtener detalle de un producto
-     * GET /api/moderador/productos/{id}
+     * Obtener detalle de una solicitud por ID del producto
+     * GET /api/moderador/productos/{productoId}
      */
-    @GetMapping("/productos/{id}")
+    @GetMapping("/productos/{productoId}")
     @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
-    public ResponseEntity<ProductoModeracionResponse> obtenerProducto(@PathVariable UUID id) {
-        ProductoModeracionResponse producto = moderadorService.obtenerProductoPorId(id);
-        return ResponseEntity.ok(producto);
-    }
-    
-    /**
-     * Aprobar producto
-     * PUT /api/moderador/productos/{id}/aprobar
-     */
-    @PutMapping("/productos/{id}/aprobar")
-    @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> aprobarProducto(@PathVariable UUID id) {
+    public ResponseEntity<ProductoModeracionResponse> obtenerSolicitud(@PathVariable UUID productoId) {
         try {
-            ProductoModeracionResponse producto = moderadorService.aprobarProducto(id);
-            return ResponseEntity.ok(producto);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error al aprobar producto: " + e.getMessage()));
+            ProductoModeracionResponse solicitud = moderadorService.obtenerSolicitudPorProductoId(productoId);
+            return ResponseEntity.ok(solicitud);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
     
     /**
-     * Rechazar producto
-     * PUT /api/moderador/productos/{id}/rechazar
+     * Aprobar solicitud de producto
+     * PUT /api/moderador/productos/{productoId}/aprobar
      */
-    @PutMapping("/productos/{id}/rechazar")
+    @PutMapping("/productos/{productoId}/aprobar")
     @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> rechazarProducto(
-            @PathVariable UUID id,
+    public ResponseEntity<?> aprobarSolicitud(@PathVariable UUID productoId) {
+        try {
+            ProductoModeracionResponse solicitud = moderadorService.aprobarSolicitud(productoId);
+            return ResponseEntity.ok(solicitud);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error al aprobar solicitud: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Rechazar solicitud de producto
+     * PUT /api/moderador/productos/{productoId}/rechazar
+     */
+    @PutMapping("/productos/{productoId}/rechazar")
+    @PreAuthorize("hasRole('MODERADOR') or hasRole('ADMIN')")
+    public ResponseEntity<?> rechazarSolicitud(
+            @PathVariable UUID productoId,
             @Valid @RequestBody ModeracionRequest request
     ) {
         try {
-            ProductoModeracionResponse producto = moderadorService.rechazarProducto(
-                id, 
+            ProductoModeracionResponse solicitud = moderadorService.rechazarSolicitud(
+                productoId, 
                 request.getMotivo()
             );
-            return ResponseEntity.ok(producto);
-        } catch (Exception e) {
+            return ResponseEntity.ok(solicitud);
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error al rechazar producto: " + e.getMessage()));
+                    .body(new MessageResponse("Error al rechazar solicitud: " + e.getMessage()));
         }
     }
 }

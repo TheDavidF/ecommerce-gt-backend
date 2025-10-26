@@ -1,11 +1,13 @@
 package com.ecommercegt.backend.repositorios;
 
 import com.ecommercegt.backend.models.entidades.Usuario;
+import com.ecommercegt.backend.models.enums.RolNombre;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -47,4 +49,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             "INNER JOIN roles r ON ur.rol_id = r.id " +
             "WHERE r.nombre = 'VENDEDOR'", nativeQuery = true)
     Long countVendedores();
+
+    @Query("SELECT u FROM Usuario u JOIN u.roles r WHERE r.nombre = :rolNombre")
+    Page<Usuario> findByRolesNombre(@Param("rolNombre") RolNombre rolNombre, Pageable pageable);
 }

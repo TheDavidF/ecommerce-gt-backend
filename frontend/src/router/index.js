@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const routes = [
+  // ==================== RUTAS PÚBLICAS ====================
   {
     path: '/',
     name: 'Home',
@@ -33,11 +34,11 @@ const routes = [
     meta: { requiresAuth: false, hideForAuth: true }
   },
   
-  // Rutas protegidas
+  // ==================== RUTAS PROTEGIDAS (USUARIOS) ====================
   {
     path: '/carrito',
     name: 'Cart',
-    component: () => import('../views/Carrito.vue'), // ← Usa el archivo que tengas
+    component: () => import('../views/Carrito.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -59,21 +60,55 @@ const routes = [
     meta: { requiresAuth: true }
   },
   
-  // Rutas de roles
+  // ==================== RUTAS DE ADMINISTRADOR ====================
+  {
+    path: '/admin',
+    name: 'admin',
+    redirect: '/admin/usuarios',
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   {
     path: '/admin/dashboard',
     name: 'AdminDashboard',
     component: () => import('../views/admin/Dashboard.vue'),
-    meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/usuarios',
+    name: 'admin-usuarios',
+    component: () => import('../views/admin/AdminUsuarios.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/estadisticas',
+    name: 'admin-estadisticas',
+    component: () => import('../views/admin/AdminEstadisticas.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  
+  // ==================== RUTAS DE MODERADOR ====================
+  {
+    path: '/moderador',
+    name: 'moderador',
+    redirect: '/moderador/productos',
+    meta: { requiresAuth: true, requiresModerador: true }
+  },
+  {
+    path: '/moderador/productos',
+    name: 'moderador-productos',
+    component: () => import('../views/moderador/ModeradorProductos.vue'),
+    meta: { requiresAuth: true, requiresModerador: true }
+  },
+  
+  // ==================== RUTAS DE VENDEDOR ====================
   {
     path: '/vendedor/dashboard',
     name: 'VendedorDashboard',
     component: () => import('../views/seller/Dashboard.vue'),
-    meta: { requiresAuth: true, roles: ['ROLE_VENDEDOR', 'ROLE_ADMIN'] }
+    meta: { requiresAuth: true, requiresVendedor: true }
   },
   
-  // Páginas de error
+  // ==================== PÁGINAS DE ERROR ====================
   {
     path: '/403',
     name: 'Forbidden',
@@ -85,7 +120,7 @@ const routes = [
     name: 'NotFound',
     component: () => import('../views/errors/NotFound.vue'),
     meta: { requiresAuth: false }
-  },
+  }
 ]
 
 const router = createRouter({
@@ -93,14 +128,13 @@ const router = createRouter({
   routes,
 })
 
-// Navigation Guard
+// ==================== NAVIGATION GUARD ====================
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth
-  const roles = to.meta.roles
   const hideForAuth = to.meta.hideForAuth
 
-  // Si la ruta requiere autenticación
+  // Si la ruta requiere autenticación y no está autenticado
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
     return
@@ -112,10 +146,27 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // Si la ruta requiere roles específicos
-  if (roles && roles.length > 0) {
-    const user = authStore.user
-    const hasRole = user?.roles?.some(role => roles.includes(role))
+  // Verificar si requiere rol de ADMIN
+  if (to.meta.requiresAdmin && !authStore.hasRole('ADMIN')) {
+    next('/403')
+    return
+  }
+
+  // Verificar si requiere rol de MODERADOR (o ADMIN)
+  if (to.meta.requiresModerador && !authStore.hasAnyRole(['MODERADOR', 'ADMIN'])) {
+    next('/403')
+    return
+  }
+
+  // Verificar si requiere rol de VENDEDOR
+  if (to.meta.requiresVendedor && !authStore.hasAnyRole(['VENDEDOR', 'ADMIN'])) {
+    next('/403')
+    return
+  }
+
+  // Si tiene roles específicos antiguos (compatibilidad)
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    const hasRole = authStore.hasAnyRole(to.meta.roles)
     
     if (!hasRole) {
       next('/403')

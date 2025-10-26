@@ -1,12 +1,18 @@
 package com.ecommercegt.backend.service;
 
 import com.ecommercegt.backend.dto.response.ProductoModeracionResponse;
-import com.ecommercegt.backend.models.enums.EstadoProducto;
 import com.ecommercegt.backend.models.entidades.Producto;
+import com.ecommercegt.backend.models.entidades.SolicitudModeracion;
+import com.ecommercegt.backend.models.entidades.Usuario;
+import com.ecommercegt.backend.models.enums.EstadoProducto;
+import com.ecommercegt.backend.models.enums.EstadoSolicitudModeracion;
 import com.ecommercegt.backend.repositorios.ProductoRepository;
+import com.ecommercegt.backend.repositorios.SolicitudModeracionRepository;
+import com.ecommercegt.backend.repositorios.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,73 +24,142 @@ import java.util.UUID;
 public class ModeradorService {
     
     private final ProductoRepository productoRepository;
+    private final SolicitudModeracionRepository solicitudRepository;
+    private final UsuarioRepository usuarioRepository;
     
-    public Page<ProductoModeracionResponse> listarProductosPendientes(Pageable pageable) {
-        Page<Producto> productos = productoRepository.findByEstado(
-            EstadoProducto.PENDIENTE_REVISION, 
+    /**
+     * Listar solicitudes pendientes de moderación
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoModeracionResponse> listarSolicitudesPendientes(Pageable pageable) {
+        Page<SolicitudModeracion> solicitudes = solicitudRepository.findByEstadoWithDetails(
+            EstadoSolicitudModeracion.PENDIENTE, 
             pageable
         );
-        return productos.map(this::convertirAResponse);
+        return solicitudes.map(this::convertirSolicitudAResponse);
     }
     
-    public Page<ProductoModeracionResponse> listarProductos(String estado, Pageable pageable) {
+    /**
+     * Listar todas las solicitudes con filtro por estado
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoModeracionResponse> listarSolicitudes(String estado, Pageable pageable) {
         if (estado == null || estado.isEmpty()) {
-            return productoRepository.findAll(pageable).map(this::convertirAResponse);
+            return solicitudRepository.findAll(pageable)
+                    .map(this::convertirSolicitudAResponse);
         }
         
         try {
-            EstadoProducto estadoEnum = EstadoProducto.valueOf(estado.toUpperCase());
-            return productoRepository.findByEstado(estadoEnum, pageable)
-                    .map(this::convertirAResponse);
+            EstadoSolicitudModeracion estadoEnum = EstadoSolicitudModeracion.valueOf(estado.toUpperCase());
+            return solicitudRepository.findByEstado(estadoEnum, pageable)
+                    .map(this::convertirSolicitudAResponse);
         } catch (IllegalArgumentException e) {
-            return productoRepository.findAll(pageable).map(this::convertirAResponse);
+            return solicitudRepository.findAll(pageable)
+                    .map(this::convertirSolicitudAResponse);
         }
     }
     
-    public ProductoModeracionResponse obtenerProductoPorId(UUID id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        return convertirAResponse(producto);
+    /**
+     * Obtener detalle de una solicitud por ID del producto
+     */
+    @Transactional(readOnly = true)
+    public ProductoModeracionResponse obtenerSolicitudPorProductoId(UUID productoId) {
+        SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada para el producto"));
+        return convertirSolicitudAResponse(solicitud);
     }
     
+    /**
+     * Aprobar solicitud de moderación
+     */
     @Transactional
-    public ProductoModeracionResponse aprobarProducto(UUID id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+    public ProductoModeracionResponse aprobarSolicitud(UUID productoId) {
+        // Buscar la solicitud
+        SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
         
-        if (producto.getEstado() == EstadoProducto.APROBADO) {
-            throw new RuntimeException("El producto ya está aprobado");
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.APROBADA) {
+            throw new RuntimeException("La solicitud ya está aprobada");
         }
         
+        // Obtener el moderador actual
+        Usuario moderador = obtenerUsuarioActual();
+        
+        // Actualizar solicitud
+        solicitud.setEstado(EstadoSolicitudModeracion.APROBADA);
+        solicitud.setModerador(moderador);
+        solicitud.setFechaRevision(LocalDateTime.now());
+        solicitud.setRazon(null); // Limpiar razón de rechazo si había
+        
+        // Actualizar producto
+        Producto producto = solicitud.getProducto();
         producto.setEstado(EstadoProducto.APROBADO);
-        // Nota: motivoRechazo no existe en la entidad Producto actual
         producto.setFechaActualizacion(LocalDateTime.now());
         
-        Producto productoActualizado = productoRepository.save(producto);
+        // Guardar cambios
+        solicitudRepository.save(solicitud);
+        productoRepository.save(producto);
         
-        return convertirAResponse(productoActualizado);
+        // TODO: Enviar notificación al vendedor
+        
+        return convertirSolicitudAResponse(solicitud);
     }
     
+    /**
+     * Rechazar solicitud de moderación
+     */
     @Transactional
-    public ProductoModeracionResponse rechazarProducto(UUID id, String motivo) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        
-        if (producto.getEstado() == EstadoProducto.RECHAZADO) {
-            throw new RuntimeException("El producto ya está rechazado");
+    public ProductoModeracionResponse rechazarSolicitud(UUID productoId, String razon) {
+        // Validar razón
+        if (razon == null || razon.trim().isEmpty()) {
+            throw new RuntimeException("Debe proporcionar una razón para rechazar el producto");
         }
         
+        // Buscar la solicitud
+        SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+        
+        if (solicitud.getEstado() == EstadoSolicitudModeracion.RECHAZADA) {
+            throw new RuntimeException("La solicitud ya está rechazada");
+        }
+        
+        // Obtener el moderador actual
+        Usuario moderador = obtenerUsuarioActual();
+        
+        // Actualizar solicitud
+        solicitud.setEstado(EstadoSolicitudModeracion.RECHAZADA);
+        solicitud.setModerador(moderador);
+        solicitud.setFechaRevision(LocalDateTime.now());
+        solicitud.setRazon(razon);
+        
+        // Actualizar producto
+        Producto producto = solicitud.getProducto();
         producto.setEstado(EstadoProducto.RECHAZADO);
-        // Nota: motivoRechazo no existe en la entidad Producto actual
-        // Podrías necesitar agregar este campo a la entidad o usar otra estrategia
         producto.setFechaActualizacion(LocalDateTime.now());
         
-        Producto productoActualizado = productoRepository.save(producto);
+        // Guardar cambios
+        solicitudRepository.save(solicitud);
+        productoRepository.save(producto);
         
-        return convertirAResponse(productoActualizado);
+        // TODO: Enviar notificación al vendedor
+        
+        return convertirSolicitudAResponse(solicitud);
     }
     
-    private ProductoModeracionResponse convertirAResponse(Producto producto) {
+    /**
+     * Obtener usuario actual del contexto de seguridad
+     */
+    private Usuario obtenerUsuarioActual() {
+        String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+    
+    /**
+     * Convertir SolicitudModeracion a ProductoModeracionResponse
+     */
+    private ProductoModeracionResponse convertirSolicitudAResponse(SolicitudModeracion solicitud) {
+        Producto producto = solicitud.getProducto();
         ProductoModeracionResponse response = new ProductoModeracionResponse();
         
         response.setId(producto.getId());
@@ -93,32 +168,35 @@ public class ModeradorService {
         response.setPrecio(producto.getPrecio());
         response.setStock(producto.getStock());
         
-        // Obtener la primera imagen si existe
+        // Imagen principal
         if (producto.getImagenes() != null && !producto.getImagenes().isEmpty()) {
-            response.setImagenUrl(producto.getImagenes().get(0).getUrlImagen());
+            producto.getImagenes().stream()
+                    .filter(img -> img.getEsPrincipal())
+                    .findFirst()
+                    .ifPresent(img -> response.setImagenUrl(img.getUrlImagen()));
+            
+            // Si no hay principal, tomar la primera
+            if (response.getImagenUrl() == null) {
+                response.setImagenUrl(producto.getImagenes().get(0).getUrlImagen());
+            }
         }
         
         response.setEstado(producto.getEstado());
-        // motivoRechazo no existe en la entidad actual - se deja null por ahora
-        response.setMotivoRechazo(null);
+        response.setMotivoRechazo(solicitud.getRazon());
         response.setFechaCreacion(producto.getFechaCreacion());
         response.setFechaActualizacion(producto.getFechaActualizacion());
         
-        // Categoría - Categoria tiene ID Integer, pero el DTO espera UUID
+        // Categoría
         if (producto.getCategoria() != null) {
-            // Conversión de Integer a UUID - esto puede ser problemático
-            // Opción 1: Cambiar el DTO para usar Integer
-            // Opción 2: Cambiar Categoria para usar UUID
-            // Por ahora comentamos esta línea
-            // response.setCategoriaId(producto.getCategoria().getId());
+            response.setCategoriaId(producto.getCategoria().getId());
             response.setCategoriaNombre(producto.getCategoria().getNombre());
         }
         
-        // Vendedor - Usar los campos que realmente existen en Usuario
-        if (producto.getVendedor() != null) {
-            response.setVendedorId(producto.getVendedor().getId());
-            response.setVendedorNombre(producto.getVendedor().getNombreCompleto());
-            response.setVendedorEmail(producto.getVendedor().getCorreo());
+        // Vendedor (solicitante)
+        if (solicitud.getSolicitante() != null) {
+            response.setVendedorId(solicitud.getSolicitante().getId());
+            response.setVendedorNombre(solicitud.getSolicitante().getNombreCompleto());
+            response.setVendedorEmail(solicitud.getSolicitante().getCorreo());
         }
         
         return response;

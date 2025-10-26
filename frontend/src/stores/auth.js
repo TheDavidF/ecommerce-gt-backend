@@ -12,10 +12,18 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAdmin: (state) => state.user?.roles?.includes('ROLE_ADMIN'),
-    isVendedor: (state) => state.user?.roles?.includes('ROLE_VENDEDOR'),
-    isCliente: (state) => state.user?.roles?.includes('ROLE_CLIENTE'),
+    // Getters actualizados para roles SIN prefijo ROLE_
+    isAdmin: (state) => state.user?.roles?.includes('ADMIN'),
+    isModerador: (state) => state.user?.roles?.includes('MODERADOR'),
+    isLogistica: (state) => state.user?.roles?.includes('LOGISTICA'),
+    isVendedor: (state) => state.user?.roles?.includes('VENDEDOR'),
+    isCliente: (state) => state.user?.roles?.includes('COMUN'),
+    
     username: (state) => state.user?.nombreUsuario,
+    userName: (state) => state.user?.nombreCompleto || state.user?.nombreUsuario || '',
+    
+    currentUser: (state) => state.user,
+    userRoles: (state) => state.user?.roles || []
   },
 
   actions: {
@@ -64,5 +72,21 @@ export const useAuthStore = defineStore('auth', {
         throw error
       }
     },
+
+    /**
+     * Verificar si el usuario tiene un rol específico
+     */
+    hasRole(rol) {
+      if (!this.user || !this.user.roles) return false
+      return this.user.roles.includes(rol)
+    },
+    
+    /**
+     * Verificar si el usuario tiene alguno de los roles especificados
+     */
+    hasAnyRole(roles) {
+      if (!this.user || !this.user.roles) return false
+      return roles.some(rol => this.user.roles.includes(rol))
+    }
   },
 })
