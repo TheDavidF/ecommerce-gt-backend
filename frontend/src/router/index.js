@@ -87,6 +87,12 @@ const routes = [
   },
   // ==================== RUTAS DE ADMINISTRADOR ====================
   {
+    path: "/pedido/:id",
+    name: "PedidoDetalle",
+    component: () => import("../views/PedidoDetalle.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/admin",
     name: "admin",
     redirect: "/admin/usuarios",

@@ -53,25 +53,49 @@
           </button>
         </div>
 
-        <!-- Resumen del carrito -->
+        <!-- Resumen del carrito y formulario de datos de envío -->
         <div class="lg:col-span-1">
           <div class="card sticky top-24">
             <h2 class="text-xl font-bold text-gray-900 mb-4">
               Resumen del pedido
             </h2>
-
+            <!-- Formulario de datos de envío -->
+            <form @submit.prevent="handleCheckout" class="space-y-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Dirección de envío</label>
+                <input v-model="direccionEnvio" type="text" class="w-full border rounded px-3 py-2" required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de contacto</label>
+                <input v-model="telefonoContacto" type="text" class="w-full border rounded px-3 py-2" required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+                <select v-model="metodoPago" class="w-full border rounded px-3 py-2" required>
+                  <option value="">Selecciona...</option>
+                  <option value="TARJETA">Tarjeta</option>
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                :disabled="cartStore.loading || !cartStore.hasItems"
+                class="btn-primary w-full py-3 text-lg"
+              >
+                Proceder al pago
+              </button>
+            </form>
             <!-- Desglose -->
             <div class="space-y-3 mb-6">
               <div class="flex justify-between text-gray-700">
                 <span>Subtotal:</span>
                 <span>Q {{ formatPrice(cartStore.subtotal) }}</span>
               </div>
-              
               <div class="flex justify-between text-gray-700">
                 <span>IVA (12%):</span>
                 <span>Q {{ formatPrice(cartStore.subtotal * 0.12) }}</span>
               </div>
-              
               <div class="flex justify-between text-gray-700">
                 <span>Envío:</span>
                 <span v-if="cartStore.subtotal > 500" class="text-green-600">
@@ -79,34 +103,22 @@
                 </span>
                 <span v-else>Q 25.00</span>
               </div>
-              
               <div class="border-t pt-3 flex justify-between text-xl font-bold text-gray-900">
                 <span>Total:</span>
                 <span>Q {{ formatPrice(calculateTotal) }}</span>
               </div>
             </div>
-
             <!-- Mensaje de envío gratis -->
             <div v-if="cartStore.subtotal > 500" class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
               <p class="text-sm text-green-800">
                 ¡Tienes envío gratis!
               </p>
             </div>
-            <div v-else class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div v-else-if="cartStore.subtotal > 0" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p class="text-sm text-blue-800">
                 Agrega Q {{ formatPrice(500 - cartStore.subtotal) }} más para envío gratis
               </p>
             </div>
-
-            <!-- Botón proceder al checkout -->
-            <button
-              @click="handleCheckout"
-              :disabled="cartStore.loading || !cartStore.hasItems"
-              class="btn-primary w-full py-3 text-lg"
-            >
-              Proceder al pago
-            </button>
-
             <button
               @click="$router.push('/productos')"
               class="btn-secondary w-full mt-3"
@@ -128,6 +140,7 @@ import NavBar from '../components/layout/NavBar.vue'
 import CartItem from '../components/cart/CartItem.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import { useToast } from 'vue-toastification'
+import pedidoService from '@/services/pedidoService'
 
 const router = useRouter()
 const toast = useToast()
@@ -160,19 +173,53 @@ const handleClearCart = async () => {
   }
 }
 
+import { ref } from 'vue'
+const direccionEnvio = ref('')
+const metodoPago = ref('')
+const telefonoContacto = ref('')
+
 const handleCheckout = async () => {
   // Verificar stock antes de proceder
   const stockAvailable = await cartStore.verifyStock()
-  
   if (!stockAvailable) {
     toast.error('Algunos productos no tienen stock suficiente')
-    await cartStore.fetchCart() // Actualizar carrito
+    await cartStore.fetchCart()
     return
   }
-  
-  // Redirigir a checkout
-  toast.info('Módulo de checkout en desarrollo')
-  // router.push('/checkout')
+
+  try {
+    // Validación extra antes de enviar el pedido
+    if (!direccionEnvio.value || !metodoPago.value || !telefonoContacto.value) {
+      toast.error('Completa todos los datos de envío y pago')
+      return
+    }
+    if (direccionEnvio.value.length < 10) {
+      toast.error('La dirección debe tener al menos 10 caracteres')
+      return
+    }
+    if (telefonoContacto.value.length < 8) {
+      toast.error('El teléfono debe tener al menos 8 dígitos')
+      return
+    }
+    // Construye el objeto de pedido desde el carrito
+    console.log('Items en carrito:', cartStore.items)
+    const pedidoRequest = {
+      productos: cartStore.items.map(item => ({
+        productoId: item.productoId || item.producto?.id || item.id,
+        cantidad: Number(item.cantidad) || 1
+      })),
+      direccionEnvio: direccionEnvio.value,
+      metodoPago: metodoPago.value,
+      telefonoContacto: telefonoContacto.value
+    }
+    console.log('Pedido enviado:', pedidoRequest)
+    const pedidoCreado = await pedidoService.crearPedidoDesdeCarrito(pedidoRequest)
+    toast.success('¡Pedido realizado con éxito!')
+    await cartStore.clearCart()
+    router.push(`/pedido/${pedidoCreado.id}`)
+  } catch (err) {
+    toast.error('No se pudo crear el pedido')
+  }
 }
 
 onMounted(() => {
@@ -181,15 +228,48 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
 .btn-primary {
-  @apply bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  background-color: #2563eb;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  opacity: 1;
+  cursor: pointer;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
 }
 
 .btn-secondary {
-  @apply bg-white text-gray-700 px-4 py-2 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  background-color: #fff;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  transition: background-color 0.2s;
+  opacity: 1;
+  cursor: pointer;
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f3f4f6;
 }
 
 .card {
-  @apply bg-white rounded-lg shadow-md p-6;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1.5rem;
 }
 </style>

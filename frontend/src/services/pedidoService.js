@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 /**
  * Servicio de pedidos para consumir endpoints del backend
@@ -13,7 +13,7 @@ export default {
    * @returns {Promise<Array>} Array de pedidos
    */
   async getMyPedidos(page = 0, size = 10) {
-    const resp = await axios.get('/api/pedidos', {
+  const resp = await api.get('/pedidos', {
       params: { page, size }
     });
     // Si el backend devuelve 'content', retorna el array
@@ -35,7 +35,7 @@ export default {
    * @returns {Promise<Object>} Pedido
    */
   async getPedidoDetalle(id) {
-    const resp = await axios.get(`/api/pedidos/${id}`);
+  const resp = await api.get(`/pedidos/${id}`);
     return resp.data;
   },
 
@@ -46,7 +46,7 @@ export default {
    * @returns {Promise<Object>} Pedido creado
    */
   async crearPedidoDesdeCarrito(data) {
-    const resp = await axios.post('/api/pedidos/crear-desde-carrito', data);
+  const resp = await api.post('/pedidos/crear-desde-carrito', data);
     return resp.data;
   },
 
@@ -58,7 +58,7 @@ export default {
    * @returns {Promise<Object>} Pedido cancelado
    */
   async cancelarPedido(id, motivo) {
-    const resp = await axios.delete(`/api/pedidos/${id}/cancelar`, {
+  const resp = await api.delete(`/pedidos/${id}/cancelar`, {
       data: motivo ? motivo : ''
     });
     return resp.data;
@@ -72,7 +72,7 @@ export default {
    * @returns {Promise<Object>} Pedido actualizado
    */
   async actualizarEstadoPedido(id, data) {
-    const resp = await axios.put(`/api/pedidos/${id}/estado`, data);
+  const resp = await api.put(`/pedidos/${id}/estado`, data);
     return resp.data;
   },
 
@@ -84,7 +84,7 @@ export default {
    * @returns {Promise<Array>} Array de pedidos
    */
   async getPedidosVendedor(page = 0, size = 10) {
-    const resp = await axios.get('/api/pedidos/vendedor', {
+  const resp = await api.get('/pedidos/vendedor', {
       params: { page, size }
     });
     if (resp.data && Array.isArray(resp.data.content)) {
@@ -104,7 +104,7 @@ export default {
    * @returns {Promise<Array>} Array de pedidos
    */
   async getTodosPedidos(page = 0, size = 10) {
-    const resp = await axios.get('/api/pedidos/admin/todos', {
+  const resp = await api.get('/pedidos/admin/todos', {
       params: { page, size }
     });
     if (resp.data && Array.isArray(resp.data.content)) {
@@ -122,7 +122,7 @@ export default {
    * @returns {Promise<Object>} Resumen de pedidos
    */
   async getResumenPedidos() {
-    const resp = await axios.get('/api/pedidos/resumen');
+  const resp = await api.get('/pedidos/resumen');
     return resp.data;
   },
 
@@ -132,7 +132,7 @@ export default {
    * @returns {Promise<Array>} Array de pedidos en curso
    */
   async getPedidosEnCurso() {
-    const resp = await axios.get('/api/pedidos/en-curso');
+  const resp = await api.get('/pedidos/en-curso');
     return resp.data;
   },
 
@@ -142,7 +142,7 @@ export default {
    * @returns {Promise<Array>} Array de pedidos a vencer
    */
   async getPedidosProximosVencer() {
-    const resp = await axios.get('/api/pedidos/proximos-vencer');
+  const resp = await api.get('/pedidos/proximos-vencer');
     return resp.data;
   },
 
@@ -154,7 +154,7 @@ export default {
    * @returns {Promise<Object>} Pedido actualizado
    */
   async modificarFechaEntrega(id, data) {
-    const resp = await axios.put(`/api/pedidos/${id}/fecha-entrega`, data);
+  const resp = await api.put(`/pedidos/${id}/fecha-entrega`, data);
     return resp.data;
   },
 
@@ -165,7 +165,7 @@ export default {
    * @returns {Promise<Object>} Pedido actualizado
    */
   async marcarComoEntregado(id) {
-    const resp = await axios.put(`/api/pedidos/${id}/marcar-entregado`);
+  const resp = await api.put(`/pedidos/${id}/marcar-entregado`);
     return resp.data;
   }
 };

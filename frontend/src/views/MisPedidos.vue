@@ -61,9 +61,12 @@ const pedidos = ref([])
 
 onMounted(async () => {
   try {
-    pedidos.value = await pedidoService.getMyPedidos()
+   const resultado = await pedidoService.getMyPedidos()
+   console.log('Pedidos recibidos:', resultado)
+   pedidos.value = resultado
   } catch (err) {
-    pedidos.value = []
+   console.error('Error al obtener pedidos:', err)
+   pedidos.value = []
   } finally {
     loading.value = false
   }
