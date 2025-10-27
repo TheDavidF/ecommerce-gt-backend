@@ -37,70 +37,32 @@ export const useProductStore = defineStore('product', {
 
   actions: {
     async fetchProducts(params = {}) {
-  this.loading = true
-  try {
-    // Construir parámetros de consulta
-    const queryParams = {
-      page: this.pagination.page,
-      size: this.pagination.size,
-    }
-
-    // Agregar ordenamiento si existe
-    if (this.filters.ordenar) {
-      // Tu backend espera sortBy y direction separados
-      const sortMap = {
-        'fecha_desc': { sortBy: 'fechaCreacion', direction: 'desc' },
-        'fecha_asc': { sortBy: 'fechaCreacion', direction: 'asc' },
-        'precio_asc': { sortBy: 'precio', direction: 'asc' },
-        'precio_desc': { sortBy: 'precio', direction: 'desc' },
-        'nombre_asc': { sortBy: 'nombre', direction: 'asc' },
-        'nombre_desc': { sortBy: 'nombre', direction: 'desc' }
-      }
-      
-      const sort = sortMap[this.filters.ordenar] || { sortBy: 'fechaCreacion', direction: 'desc' }
-      queryParams.sortBy = sort.sortBy
-      queryParams.direction = sort.direction
-    }
-
-    // Combinar con parámetros adicionales
-    const finalParams = { ...queryParams, ...params }
-
-    let response
-
-    // Si hay filtros de precio, usar endpoint específico
-    if (this.filters.precioMin !== null || this.filters.precioMax !== null) {
-      const min = this.filters.precioMin || 0
-      const max = this.filters.precioMax || 999999
-      response = await productService.filterByPrice(min, max, finalParams)
-    }
-    // Si hay filtro de categoría, usar endpoint específico
-    else if (this.filters.categoria) {
-      response = await productService.getProductsByCategory(this.filters.categoria, finalParams)
-    }
-    // Si no hay filtros, listar todos
-    else {
-      response = await productService.getProducts(finalParams)
-    }
-
-    this.products = response.content || response
-    
-    if (response.pageable) {
-      this.pagination = {
-        page: response.number,
-        size: response.size,
-        totalElements: response.totalElements,
-        totalPages: response.totalPages
-      }
-    }
-
+      this.loading = true
+      try {
+        // Solo mostrar productos aprobados y con stock
+        const queryParams = {
+          page: this.pagination.page,
+          size: this.pagination.size
+        }
+        const finalParams = { ...queryParams, ...params }
+  const response = await productService.getAvailableProducts(finalParams)
+        this.products = response.content || response
+        if (response.pageable) {
+          this.pagination = {
+            page: response.number,
+            size: response.size,
+            totalElements: response.totalElements,
+            totalPages: response.totalPages
+          }
+        }
         return response
-    } catch (error) {
+      } catch (error) {
         console.error('Error al cargar productos:', error)
         toast.error('Error al cargar productos')
         throw error
-    } finally {
+      } finally {
         this.loading = false
-    }
+      }
     },
 
     async fetchProductById(id) {

@@ -11,42 +11,40 @@ export default {
       sortBy: filters.sortBy || 'fechaCreacion',
       direction: filters.direction || 'desc'
     }
-    
     if (filters.rol) {
       params.rol = filters.rol
     }
-    
-    const response = await api.get('/admin/usuarios', { params })
+    const response = await api.get('/api/admin/usuarios', { params })
     return response.data
   },
 
   // Obtener usuario por ID
   async getUsuarioById(id) {
-    const response = await api.get(`/admin/usuarios/${id}`)
+    const response = await api.get(`/api/admin/usuarios/${id}`)
     return response.data
   },
 
   // Crear usuario
   async crearUsuario(userData) {
-    const response = await api.post('/admin/usuarios', userData)
+    const response = await api.post('/api/admin/usuarios', userData)
     return response.data
   },
 
   // Actualizar usuario
   async actualizarUsuario(id, userData) {
-    const response = await api.put(`/admin/usuarios/${id}`, userData)
+    const response = await api.put(`/api/admin/usuarios/${id}`, userData)
     return response.data
   },
 
   // Desactivar usuario
   async desactivarUsuario(id) {
-    const response = await api.put(`/admin/usuarios/${id}/desactivar`)
+    const response = await api.put(`/api/admin/usuarios/${id}/desactivar`)
     return response.data
   },
 
   // Activar usuario
   async activarUsuario(id) {
-    const response = await api.put(`/admin/usuarios/${id}/activar`)
+    const response = await api.put(`/api/admin/usuarios/${id}/activar`)
     return response.data
   },
 

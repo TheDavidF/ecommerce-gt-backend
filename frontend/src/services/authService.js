@@ -13,7 +13,7 @@ export default {
       direccion: userData.direccion || null
     }
     
-    const response = await api.post('/auth/register', payload)
+  const response = await api.post('/api/auth/register', payload)
     return response.data
   },
 
@@ -25,7 +25,7 @@ export default {
       contrasena: credentials.password  // password → contrasena
     }
     
-    const response = await api.post('/auth/login', payload)
+  const response = await api.post('/api/auth/login', payload)
     
     if (response.data.token) {
       localStorage.setItem('token', response.data.token)
@@ -43,7 +43,7 @@ export default {
 
   // Obtener usuario actual
   async getCurrentUser() {
-    const response = await api.get('/auth/me')
+  const response = await api.get('/api/auth/me')
     return response.data
   },
 

@@ -97,7 +97,7 @@ public class PedidoService {
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
         pedido.setNumeroOrden(generarNumeroOrden());
-        pedido.setEstado(EstadoPedido.PENDIENTE);
+    pedido.setEstado(EstadoPedido.ENVIADO);
         pedido.setDireccionEnvio(request.getDireccionEnvio());
         pedido.setTelefonoContacto(request.getTelefonoContacto());
         pedido.setMetodoPago(request.getMetodoPago());
@@ -205,12 +205,14 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public PedidoResponse obtenerDetallePedido(UUID pedidoId) {
         Usuario usuario = obtenerUsuarioAutenticado();
-
         Pedido pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + pedidoId));
 
-        // Validar que el pedido pertenezca al usuario
-        if (!pedido.getUsuario().getId().equals(usuario.getId())) {
+        // Si el usuario tiene rol LOGISTICA o ADMIN, puede ver cualquier pedido
+        boolean esLogistica = usuario.getRoles().stream()
+            .anyMatch(r -> r.getNombre().name().equals("LOGISTICA") || r.getNombre().name().equals("ADMIN"));
+
+        if (!esLogistica && !pedido.getUsuario().getId().equals(usuario.getId())) {
             throw new RuntimeException("No tienes permiso para ver este pedido");
         }
 
@@ -446,11 +448,12 @@ public class PedidoService {
      */
     @Transactional(readOnly = true)
     public List<PedidoResponse> obtenerPedidosEnCurso() {
-        List<EstadoPedido> estadosEnCurso = Arrays.asList(
-                EstadoPedido.PENDIENTE,
-                EstadoPedido.CONFIRMADO,
-                EstadoPedido.EN_PREPARACION,
-                EstadoPedido.ENVIADO);
+    List<EstadoPedido> estadosEnCurso = Arrays.asList(
+        EstadoPedido.PENDIENTE,
+        EstadoPedido.CONFIRMADO,
+        EstadoPedido.EN_PREPARACION,
+        EstadoPedido.ENVIADO,
+        EstadoPedido.ENTREGADO);
 
         List<Pedido> pedidos = pedidoRepository.findByEstadoInOrderByFechaPedidoDesc(estadosEnCurso);
 

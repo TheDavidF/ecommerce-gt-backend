@@ -79,6 +79,29 @@
         </div>
       </div>
 
+      <!-- Sección de reviews pendientes -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Reviews pendientes de aprobación</h2>
+        <div v-if="moderadorStore.loadingReviews" class="text-center py-8">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-600"></div>
+          <p class="mt-2 text-gray-600">Cargando reviews...</p>
+        </div>
+        <div v-else-if="moderadorStore.reviewsPendientes.length > 0" class="space-y-6">
+          <ReviewCard
+            v-for="review in moderadorStore.reviewsPendientes"
+            :key="review.id"
+            :review="review"
+            @aprobar="moderadorStore.aprobarReview"
+            @rechazar="moderadorStore.rechazarReview"
+          />
+          <div v-if="moderadorStore.totalReviewsPendientes > 10" class="text-sm text-gray-500 mt-4">Mostrando las primeras 10 reviews pendientes.</div>
+        </div>
+        <div v-else class="bg-white rounded-lg shadow p-8 text-center">
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No hay reviews pendientes</h3>
+          <p class="text-gray-600">No se encontraron reviews pendientes de aprobación.</p>
+        </div>
+      </div>
+
       <!-- Loading -->
       <div v-if="moderadorStore.loading" class="text-center py-12">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -175,6 +198,7 @@ import ProductoModeracionCard from '../../components/moderador/ProductoModeracio
 import ModalRechazar from '../../components/moderador/ModalRechazar.vue'
 import ModalSolicitarCambios from '../../components/moderador/ModalSolicitarCambios.vue'
 import DetalleProductoModal from '../../components/moderador/DetalleProductoModal.vue'
+import ReviewCard from '../../components/moderador/ReviewCard.vue'
 
 const moderadorStore = useModeradorStore()
 
@@ -263,6 +287,9 @@ const cerrarModalDetalles = () => {
 onMounted(async () => {
   await moderadorStore.fetchSolicitudes()
   await moderadorStore.fetchEstadisticas()
+  await moderadorStore.fetchReviewsPendientes()
+  console.log('Solicitudes cargadas:', moderadorStore.solicitudes)
+  console.log('Reviews pendientes cargadas:', moderadorStore.reviewsPendientes)
 })
 </script>
 

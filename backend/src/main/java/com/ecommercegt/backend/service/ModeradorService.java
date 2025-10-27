@@ -60,12 +60,12 @@ public class ModeradorService {
     }
     
     /**
-     * Obtener detalle de una solicitud por ID del producto
+     * Obtener detalle de una solicitud por su propio ID
      */
     @Transactional(readOnly = true)
-    public ProductoModeracionResponse obtenerSolicitudPorProductoId(UUID productoId) {
-        SolicitudModeracion solicitud = solicitudRepository.findByProductoId(productoId)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada para el producto"));
+    public ProductoModeracionResponse obtenerSolicitudPorId(UUID solicitudId) {
+        SolicitudModeracion solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
         return convertirSolicitudAResponse(solicitud);
     }
     

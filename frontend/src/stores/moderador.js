@@ -12,18 +12,20 @@ export const useModeradorStore = defineStore('moderador', {
     currentPage: 0,
     loading: false,
     estadoFiltro: 'PENDIENTE', // PENDIENTE, APROBADO, RECHAZADO, CAMBIOS_SOLICITADOS, TODOS
-    
     // Solicitud actual (para modal)
     solicitudActual: null,
     productoActual: null,
-    
     // Estadísticas
     estadisticas: {
       pendientes: 0,
       aprobadas: 0,
       rechazadas: 0,
       cambiosSolicitados: 0
-    }
+    },
+    // Reviews pendientes
+    reviewsPendientes: [],
+    totalReviewsPendientes: 0,
+    loadingReviews: false
   }),
 
   getters: {
@@ -40,13 +42,48 @@ export const useModeradorStore = defineStore('moderador', {
   },
 
   actions: {
+    // ==================== REVIEWS PENDIENTES ====================
+    async fetchReviewsPendientes(page = 0, size = 10) {
+      this.loadingReviews = true
+      try {
+        const response = await import('../services/reviewService').then(m => m.default.getReviewsPendientes({ page, size }))
+        this.reviewsPendientes = response.content || []
+        this.totalReviewsPendientes = response.totalElements || 0
+      } catch (error) {
+        console.error('Error al cargar reviews pendientes:', error)
+        this.reviewsPendientes = []
+      } finally {
+        this.loadingReviews = false
+      }
+    },
+
+    async aprobarReview(id) {
+      try {
+        await import('../services/reviewService').then(m => m.default.aprobarReview(id))
+        await this.fetchReviewsPendientes()
+        return true
+      } catch (error) {
+        console.error('Error al aprobar review:', error)
+        return false
+      }
+    },
+
+    async rechazarReview(id) {
+      try {
+        await import('../services/reviewService').then(m => m.default.rechazarReview(id))
+        await this.fetchReviewsPendientes()
+        return true
+      } catch (error) {
+        console.error('Error al rechazar review:', error)
+        return false
+      }
+    },
     // ==================== CARGAR SOLICITUDES ====================
     
     async fetchSolicitudes(page = 0, size = 10) {
       this.loading = true
       try {
         let response
-        
         if (this.estadoFiltro === 'TODOS') {
           response = await moderadorService.getTodasSolicitudes({ page, size })
         } else if (this.estadoFiltro === 'PENDIENTE') {
@@ -54,12 +91,13 @@ export const useModeradorStore = defineStore('moderador', {
         } else {
           response = await moderadorService.getSolicitudesPorEstado(this.estadoFiltro, { page, size })
         }
-        
+        // Log para debug: mostrar estructura de la respuesta
+        console.log('Respuesta en fetchSolicitudes:', response)
+        // Asignar correctamente el array y los totales
         this.solicitudes = response.content || []
         this.totalSolicitudes = response.totalElements || 0
         this.totalPages = response.totalPages || 0
         this.currentPage = response.number || 0
-        
       } catch (error) {
         console.error('Error al cargar solicitudes:', error)
         toast.error('Error al cargar solicitudes')

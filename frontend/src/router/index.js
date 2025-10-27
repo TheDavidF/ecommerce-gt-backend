@@ -128,7 +128,7 @@ const routes = [
     path: "/logistica",
     name: "Logistica",
     component: () => import("@/views/logistica/PedidosLogistica.vue"),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, requiresRole: ["LOGISTICA", "ADMIN"] },
   },
 
   // ==================== RUTAS DE MODERADOR ====================
@@ -191,7 +191,15 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  // Verificar si requiere rol de ADMIN
+  // Verificar si requiere roles específicos (nuevo)
+  if (to.meta.requiresRole && Array.isArray(to.meta.requiresRole)) {
+    if (!authStore.hasAnyRole(to.meta.requiresRole)) {
+      next("/403");
+      return;
+    }
+  }
+
+  // Verificar si requiere rol de ADMIN (legacy)
   if (to.meta.requiresAdmin && !authStore.hasRole("ADMIN")) {
     next("/403");
     return;
@@ -218,7 +226,6 @@ router.beforeEach((to, from, next) => {
   // Si tiene roles específicos antiguos (compatibilidad)
   if (to.meta.roles && to.meta.roles.length > 0) {
     const hasRole = authStore.hasAnyRole(to.meta.roles);
-
     if (!hasRole) {
       next("/403");
       return;

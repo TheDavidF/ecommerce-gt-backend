@@ -23,7 +23,8 @@
     <!-- Filtros por estado -->
     <FiltroPedidos
       v-model="estadoFiltro"
-      :contadores="contadoresPorEstado"
+      :contadores="contadoresPorEstadoFiltrados"
+      :estados="['TODOS', 'ENVIADO', 'ENTREGADO']"
     />
 
     <!-- Loading -->
@@ -33,7 +34,7 @@
     </div>
 
     <!-- Lista de pedidos -->
-    <div v-else-if="pedidosFiltrados.length > 0">
+    <div v-if="pedidosFiltrados.length > 0">
       <TarjetaPedido
         v-for="pedido in pedidosFiltrados"
         :key="pedido.id"
@@ -54,10 +55,42 @@
 
     <!-- Modal para modificar fecha -->
     <ModalFechaEntrega
+      v-if="pedidoSeleccionado && (pedidoSeleccionado.estado === 'ENVIADO' || pedidoSeleccionado.estado === 'ENTREGADO')"
       v-model="modalFechaVisible"
       :pedido="pedidoSeleccionado"
       @guardar="guardarNuevaFecha"
     />
+
+    <!-- Modal de detalle de pedido -->
+    <div v-if="modalDetalleVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div class="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative">
+        <button @click="cerrarModalDetalle" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+        <h2 class="text-2xl font-bold mb-4">Detalle del pedido</h2>
+        <div v-if="detallePedido">
+          <div class="mb-2"><strong>ID:</strong> {{ detallePedido.id }}</div>
+          <div class="mb-2"><strong>Cliente:</strong> {{ detallePedido.clienteNombre || detallePedido.cliente?.nombre || 'N/A' }}</div>
+          <div class="mb-2"><strong>Estado:</strong> {{ detallePedido.estado }}</div>
+          <div class="mb-2"><strong>Dirección de envío:</strong> {{ detallePedido.direccionEnvio }}</div>
+          <div class="mb-2"><strong>Teléfono:</strong> {{ detallePedido.telefonoContacto }}</div>
+          <div class="mb-2"><strong>Método de pago:</strong> {{ detallePedido.metodoPago }}</div>
+          <div class="mb-2"><strong>Fecha de creación:</strong> {{ detallePedido.fechaCreacion }} </div>
+          <div class="mb-4"><strong>Total:</strong> Q {{ formatPrice(detallePedido.total) }}</div>
+          <div>
+            <strong>Productos:</strong>
+            <ul class="list-disc pl-6">
+              <li v-for="item in detallePedido.items || detallePedido.productos || []" :key="item.id">
+                {{ item.productoNombre || item.nombre || 'Producto' }} - Cantidad: {{ item.cantidad }} - Q {{ formatPrice(item.precioUnitario || item.precio || 0) }}
+              </li>
+            </ul>
+          </div>
+          <!-- Solo mostrar acción si el estado es ENVIADO -->
+          <div v-if="detallePedido.estado === 'ENVIADO'" class="mt-6">
+            <button @click="confirmarEntrega(detallePedido)" class="btn-primary w-full">Marcar como entregado</button>
+          </div>
+        </div>
+        <div v-else class="text-center text-gray-500">Cargando detalle...</div>
+      </div>
+    </div>
 
     <!-- Snackbar para notificaciones -->
     <Transition name="snackbar">
@@ -97,6 +130,8 @@ const pedidosProximosVencer = ref([]);
 const estadoFiltro = ref('TODOS');
 const modalFechaVisible = ref(false);
 const pedidoSeleccionado = ref(null);
+const modalDetalleVisible = ref(false);
+const detallePedido = ref(null);
 
 const snackbar = ref({
   visible: false,
@@ -106,27 +141,25 @@ const snackbar = ref({
 
 // Computed
 const pedidosFiltrados = computed(() => {
+  // Mostrar ENVIADO y ENTREGADO, o ambos si filtro es TODOS
   if (estadoFiltro.value === 'TODOS') {
-    return pedidos.value;
+    return pedidos.value.filter(p => p.estado === 'ENVIADO' || p.estado === 'ENTREGADO');
   }
   return pedidos.value.filter(p => p.estado === estadoFiltro.value);
 });
 
-const contadoresPorEstado = computed(() => {
+const contadoresPorEstadoFiltrados = computed(() => {
+  // Contar ENVIADO, ENTREGADO y TODOS
   const contadores = {
-    TODOS: pedidos.value.length,
-    PENDIENTE: 0,
-    CONFIRMADO: 0,
-    EN_PREPARACION: 0,
-    ENVIADO: 0
+    TODOS: 0,
+    ENVIADO: 0,
+    ENTREGADO: 0
   };
-
   pedidos.value.forEach(pedido => {
-    if (contadores[pedido.estado] !== undefined) {
-      contadores[pedido.estado]++;
-    }
+    if (pedido.estado === 'ENVIADO') contadores.ENVIADO++;
+    if (pedido.estado === 'ENTREGADO') contadores.ENTREGADO++;
   });
-
+  contadores.TODOS = contadores.ENVIADO + contadores.ENTREGADO;
   return contadores;
 });
 
@@ -148,8 +181,22 @@ const cargarPedidos = async () => {
   }
 };
 
-const verDetallePedido = (pedido) => {
-  router.push(`/pedidos/${pedido.id}`);
+const verDetallePedido = async (pedido) => {
+  modalDetalleVisible.value = true;
+  detallePedido.value = null;
+  try {
+    // Usar el servicio de pedidos para obtener el detalle
+    const resp = await import('@/services/pedidoService').then(m => m.default.getPedidoDetalle(pedido.id));
+    detallePedido.value = resp;
+  } catch (error) {
+    detallePedido.value = null;
+    mostrarSnackbar('Error al cargar detalle: ' + error.message, 'error');
+  }
+};
+
+const cerrarModalDetalle = () => {
+  modalDetalleVisible.value = false;
+  detallePedido.value = null;
 };
 
 const abrirModalFecha = (pedido) => {
@@ -197,6 +244,13 @@ const mostrarSnackbar = (mensaje, color = 'success') => {
 onMounted(() => {
   cargarPedidos();
 });
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-GT', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price || 0);
+};
 </script>
 
 <style scoped>

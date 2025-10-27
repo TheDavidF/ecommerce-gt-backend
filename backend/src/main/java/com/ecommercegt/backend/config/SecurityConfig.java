@@ -65,8 +65,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // USAR allowedOriginPatterns - compatible con allowCredentials
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+    // Usar allowedOrigins con el origen específico del frontend
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
 
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

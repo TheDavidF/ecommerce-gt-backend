@@ -2,7 +2,7 @@
   <div class="mb-6">
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="estado in estados"
+        v-for="estado in estadosFiltrados"
         :key="estado.valor"
         @click="cambiarFiltro(estado.valor)"
         :class="[
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -40,12 +40,16 @@ const props = defineProps({
   contadores: {
     type: Object,
     default: () => ({})
+  },
+  estados: {
+    type: Array,
+    default: () => ['TODOS', 'ENVIADO', 'ENTREGADO']
   }
 });
 
 const emit = defineEmits(['update:modelValue']);
 
-const estados = [
+const estadosBase = [
   {
     valor: 'TODOS',
     label: 'Todos',
@@ -55,38 +59,26 @@ const estados = [
     textBadge: 'text-gray-700'
   },
   {
-    valor: 'PENDIENTE',
-    label: 'Pendientes',
-    bgActive: 'bg-orange-600',
-    textActive: 'text-orange-600',
-    bgBadge: 'bg-orange-100',
-    textBadge: 'text-orange-700'
-  },
-  {
-    valor: 'CONFIRMADO',
-    label: 'Confirmados',
-    bgActive: 'bg-blue-600',
-    textActive: 'text-blue-600',
-    bgBadge: 'bg-blue-100',
-    textBadge: 'text-blue-700'
-  },
-  {
-    valor: 'EN_PREPARACION',
-    label: 'En Preparación',
-    bgActive: 'bg-indigo-600',
-    textActive: 'text-indigo-600',
-    bgBadge: 'bg-indigo-100',
-    textBadge: 'text-indigo-700'
-  },
-  {
     valor: 'ENVIADO',
     label: 'Enviados',
     bgActive: 'bg-green-600',
     textActive: 'text-green-600',
     bgBadge: 'bg-green-100',
     textBadge: 'text-green-700'
+  },
+  {
+    valor: 'ENTREGADO',
+    label: 'Entregados',
+    bgActive: 'bg-blue-600',
+    textActive: 'text-blue-600',
+    bgBadge: 'bg-blue-100',
+    textBadge: 'text-blue-700'
   }
 ];
+
+const estadosFiltrados = computed(() => {
+  return estadosBase.filter(e => props.estados.includes(e.valor));
+});
 
 const cambiarFiltro = (valor) => {
   emit('update:modelValue', valor);

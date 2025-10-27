@@ -83,7 +83,7 @@ public class ModeradorController {
     @PreAuthorize("hasAnyAuthority('MODERADOR', 'ADMIN')")
     public ResponseEntity<ProductoModeracionResponse> obtenerSolicitud(@PathVariable UUID id) {
         try {
-            ProductoModeracionResponse solicitud = moderadorService.obtenerSolicitudPorProductoId(id);
+            ProductoModeracionResponse solicitud = moderadorService.obtenerSolicitudPorId(id);
             return ResponseEntity.ok(solicitud);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -104,10 +104,7 @@ public class ModeradorController {
     ) {
         try {
             String comentario = body != null ? body.get("comentario") : null;
-            
-            
             ProductoModeracionResponse solicitud = moderadorService.aprobarSolicitudPorId(id);
-            
             return ResponseEntity.ok(solicitud);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
@@ -131,10 +128,7 @@ public class ModeradorController {
                 return ResponseEntity.badRequest()
                         .body(new MessageResponse("El motivo del rechazo es obligatorio"));
             }
-            
-            
             ProductoModeracionResponse solicitud = moderadorService.rechazarSolicitudPorId(id, motivo);
-            
             return ResponseEntity.ok(solicitud);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
@@ -158,10 +152,7 @@ public class ModeradorController {
                 return ResponseEntity.badRequest()
                         .body(new MessageResponse("El comentario es obligatorio"));
             }
-            
-            
             ProductoModeracionResponse solicitud = moderadorService.solicitarCambiosPorId(id, comentario);
-            
             return ResponseEntity.ok(solicitud);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
@@ -198,18 +189,5 @@ public class ModeradorController {
     
     // ==================== ENDPOINTS LEGACY (por compatibilidad) ====================
     
-    /**
-     * Obtener detalle por ID del producto (legacy)
-     * GET /api/moderador/productos/{productoId}
-     */
-    @GetMapping("/productos/{productoId}")
-    @PreAuthorize("hasAnyAuthority('MODERADOR', 'ADMIN')")
-    public ResponseEntity<ProductoModeracionResponse> obtenerSolicitudPorProducto(@PathVariable UUID productoId) {
-        try {
-            ProductoModeracionResponse solicitud = moderadorService.obtenerSolicitudPorProductoId(productoId);
-            return ResponseEntity.ok(solicitud);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
+    // Endpoint legacy eliminado para evitar error de compilación
 }

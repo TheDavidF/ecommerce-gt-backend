@@ -11,8 +11,8 @@ export default {
       page: params.page || 0,
       size: params.size || 10
     }
-    
-    const response = await api.get('/moderador/solicitudes/pendientes', { params: queryParams })
+    const response = await api.get('/api/moderador/solicitudes/pendientes', { params: queryParams })
+    console.log('Respuesta cruda solicitudes pendientes:', response)
     return response.data
   },
 
@@ -25,7 +25,7 @@ export default {
       size: params.size || 10
     }
     
-    const response = await api.get(`/moderador/solicitudes/estado/${estado}`, { params: queryParams })
+  const response = await api.get(`/api/moderador/solicitudes/estado/${estado}`, { params: queryParams })
     return response.data
   },
 
@@ -38,7 +38,7 @@ export default {
       size: params.size || 10
     }
     
-    const response = await api.get('/moderador/solicitudes', { params: queryParams })
+  const response = await api.get('/api/moderador/solicitudes', { params: queryParams })
     return response.data
   },
 
@@ -46,7 +46,7 @@ export default {
    * Obtener detalles de una solicitud
    */
   async getSolicitudById(id) {
-    const response = await api.get(`/moderador/solicitudes/${id}`)
+  const response = await api.get(`/api/moderador/solicitudes/${id}`)
     return response.data
   },
 
@@ -55,7 +55,7 @@ export default {
    */
   async aprobarSolicitud(id, comentario = null) {
     const payload = comentario ? { comentario } : {}
-    const response = await api.put(`/moderador/solicitudes/${id}/aprobar`, payload)
+  const response = await api.put(`/api/moderador/solicitudes/${id}/aprobar`, payload)
     return response.data
   },
 
@@ -64,7 +64,7 @@ export default {
    */
   async rechazarSolicitud(id, motivo) {
     const payload = { motivo }
-    const response = await api.put(`/moderador/solicitudes/${id}/rechazar`, payload)
+  const response = await api.put(`/api/moderador/solicitudes/${id}/rechazar`, payload)
     return response.data
   },
 
@@ -73,7 +73,7 @@ export default {
    */
   async solicitarCambios(id, comentario) {
     const payload = { comentario }
-    const response = await api.put(`/moderador/solicitudes/${id}/solicitar-cambios`, payload)
+  const response = await api.put(`/api/moderador/solicitudes/${id}/solicitar-cambios`, payload)
     return response.data
   },
 
@@ -83,7 +83,7 @@ export default {
    * Obtener producto por ID (con detalles completos)
    */
   async getProductoById(id) {
-    const response = await api.get(`/productos/${id}`)
+  const response = await api.get(`/api/productos/${id}`)
     return response.data
   },
 
@@ -91,7 +91,7 @@ export default {
    * Obtener estadísticas de moderación
    */
   async getEstadisticasModeracion() {
-    const response = await api.get('/moderador/estadisticas')
+  const response = await api.get('/api/moderador/estadisticas')
     return response.data
   }
 }

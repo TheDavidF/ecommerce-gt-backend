@@ -11,7 +11,7 @@
         <p class="text-gray-600 mt-4">Cargando pedidos...</p>
       </div>
 
-      <div v-else-if="pedidos.length === 0" class="bg-white rounded-lg shadow-sm p-12 text-center">
+      <div v-else-if="pedidosFiltrados.length === 0" class="bg-white rounded-lg shadow-sm p-12 text-center">
         <h3 class="text-xl font-semibold text-gray-900 mb-2">No tienes pedidos aún</h3>
         <p class="text-gray-600 mb-6">¡Realiza tu primera compra!</p>
         <router-link to="/productos" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
@@ -21,7 +21,7 @@
 
       <div v-else class="grid gap-6">
         <div
-          v-for="pedido in pedidos"
+          v-for="pedido in pedidosFiltrados"
           :key="pedido.id"
           class="bg-white rounded-lg shadow-sm hover:shadow-md transition p-6"
         >
@@ -58,15 +58,16 @@ import pedidoService from '@/services/pedidoService'
 
 const loading = ref(true)
 const pedidos = ref([])
+const pedidosFiltrados = ref([])
 
 onMounted(async () => {
   try {
-   const resultado = await pedidoService.getMyPedidos()
-   console.log('Pedidos recibidos:', resultado)
-   pedidos.value = resultado
+    const resultado = await pedidoService.getMyPedidos()
+    pedidos.value = resultado
+    pedidosFiltrados.value = resultado.filter(p => p.estado === 'ENVIADO' || p.estado === 'ENTREGADO')
   } catch (err) {
-   console.error('Error al obtener pedidos:', err)
-   pedidos.value = []
+    pedidos.value = []
+    pedidosFiltrados.value = []
   } finally {
     loading.value = false
   }
