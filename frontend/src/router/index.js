@@ -60,6 +60,31 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // ==================== RUTAS DE PRODUCTOS (Usuario Común) ====================
+  {
+    path: "/crear-producto",
+    name: "CrearProducto",
+    component: () => import("../views/comun/CrearProducto.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/mis-productos",
+    name: "MisProductos",
+    component: () => import("../views/comun/MisProductos.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/editar-producto/:id",
+    name: "EditarProducto",
+    component: () => import("../views/comun/EditarProducto.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/producto/:id",
+    name: "DetalleProducto",
+    component: () => import("../views/comun/DetalleProducto.vue"),
+    meta: { requiresAuth: false }, // Público
+  },
   // ==================== RUTAS DE ADMINISTRADOR ====================
   {
     path: "/admin",

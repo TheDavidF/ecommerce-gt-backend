@@ -20,200 +20,203 @@ import java.util.UUID;
  */
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, UUID>,
-        JpaSpecificationExecutor<Producto> {
+                JpaSpecificationExecutor<Producto> {
 
-    // ==================== BÚSQUEDA BÁSICA ====================
+        // ==================== BÚSQUEDA BÁSICA ====================
 
-    /**
-     * Buscar por nombre (case insensitive)
-     */
-    Page<Producto> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
+        List<Producto> findByEstado(EstadoProducto estado);
 
-    /**
-     * Búsqueda general (nombre, descripción, marca, modelo)
-     */
-    @Query("SELECT p FROM Producto p WHERE " +
-            "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.marca) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.modelo) LIKE LOWER(CONCAT('%', :termino, '%'))")
-    Page<Producto> buscarProductos(@Param("termino") String termino, Pageable pageable);
+        /**
+         * Buscar por nombre (case insensitive)
+         */
+        Page<Producto> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
 
-    // ==================== FILTROS POR CATEGORÍA ====================
+        /**
+         * Búsqueda general (nombre, descripción, marca, modelo)
+         */
+        @Query("SELECT p FROM Producto p WHERE " +
+                        "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+                        "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+                        "LOWER(p.marca) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+                        "LOWER(p.modelo) LIKE LOWER(CONCAT('%', :termino, '%'))")
+        Page<Producto> buscarProductos(@Param("termino") String termino, Pageable pageable);
 
-    /**
-     * Buscar productos por categoría (Integer)
-     */
-    Page<Producto> findByCategoriaId(Integer categoriaId, Pageable pageable);
+        // ==================== FILTROS POR CATEGORÍA ====================
 
-    /**
-     * Contar por categoría (Integer)
-     */
-    Long countByCategoriaId(Integer categoriaId);
+        /**
+         * Buscar productos por categoría (Integer)
+         */
+        Page<Producto> findByCategoriaId(Integer categoriaId, Pageable pageable);
 
-    // ==================== FILTROS POR VENDEDOR ====================
+        /**
+         * Contar por categoría (Integer)
+         */
+        Long countByCategoriaId(Integer categoriaId);
 
-    /**
-     * Buscar productos por vendedor
-     */
-    Page<Producto> findByVendedorId(UUID vendedorId, Pageable pageable);
+        // ==================== FILTROS POR VENDEDOR ====================
 
-    /**
-     * Contar productos por vendedor
-     */
-    Long countByVendedorId(UUID vendedorId);
+        /**
+         * Buscar productos por vendedor
+         */
+        Page<Producto> findByVendedorId(UUID vendedorId, Pageable pageable);
 
-    // ==================== FILTROS POR ESTADO ====================
+        List<Producto> findByVendedorId(UUID vendedorId);
 
-    /**
-     * Buscar productos por estado
-     */
-    Page<Producto> findByEstado(EstadoProducto estado, Pageable pageable);
+        /**
+         * Contar productos por vendedor
+         */
+        Long countByVendedorId(UUID vendedorId);
 
-    /**
-     * Buscar por estado con stock mayor a X
-     */
-    Page<Producto> findByEstadoAndStockGreaterThan(EstadoProducto estado, Integer stock, Pageable pageable);
+        // ==================== FILTROS POR ESTADO ====================
 
-    /**
-     * Contar productos por estado
-     */
-    Long countByEstado(EstadoProducto estado);
+        /**
+         * Buscar productos por estado
+         */
+        Page<Producto> findByEstado(EstadoProducto estado, Pageable pageable);
 
-    /**
-     * Contar productos aprobados
-     */
-    @Query("SELECT COUNT(p) FROM Producto p WHERE p.estado = 'APROBADO'")
-    Long countAprobados();
+        /**
+         * Buscar por estado con stock mayor a X
+         */
+        Page<Producto> findByEstadoAndStockGreaterThan(EstadoProducto estado, Integer stock, Pageable pageable);
 
-    /**
-     * Contar productos pendientes de revisión
-     */
-    @Query("SELECT COUNT(p) FROM Producto p WHERE p.estado = 'PENDIENTE_REVISION'")
-    Long countPendientes();
+        /**
+         * Contar productos por estado
+         */
+        Long countByEstado(EstadoProducto estado);
 
-    // ==================== FILTROS POR PRECIO ====================
+        /**
+         * Contar productos aprobados
+         */
+        @Query("SELECT COUNT(p) FROM Producto p WHERE p.estado = 'APROBADO'")
+        Long countAprobados();
 
-    /**
-     * Buscar por rango de precio
-     */
-    Page<Producto> findByPrecioBetween(BigDecimal precioMin, BigDecimal precioMax, Pageable pageable);
+        /**
+         * Contar productos pendientes de revisión
+         */
+        @Query("SELECT COUNT(p) FROM Producto p WHERE p.estado = 'PENDIENTE_REVISION'")
+        Long countPendientes();
 
-    /**
-     * Buscar por precio menor o igual
-     */
-    Page<Producto> findByPrecioLessThanEqual(BigDecimal precio, Pageable pageable);
+        // ==================== FILTROS POR PRECIO ====================
 
-    /**
-     * Buscar por precio mayor o igual
-     */
-    Page<Producto> findByPrecioGreaterThanEqual(BigDecimal precio, Pageable pageable);
+        /**
+         * Buscar por rango de precio
+         */
+        Page<Producto> findByPrecioBetween(BigDecimal precioMin, BigDecimal precioMax, Pageable pageable);
 
-    // ==================== FILTROS POR STOCK ====================
+        /**
+         * Buscar por precio menor o igual
+         */
+        Page<Producto> findByPrecioLessThanEqual(BigDecimal precio, Pageable pageable);
 
-    /**
-     * Contar productos con stock bajo (menor a umbral)
-     */
-    Long countByStockLessThan(Integer stock);
+        /**
+         * Buscar por precio mayor o igual
+         */
+        Page<Producto> findByPrecioGreaterThanEqual(BigDecimal precio, Pageable pageable);
 
-    /**
-     * Contar productos con stock menor o igual
-     */
-    Long countByStockLessThanEqual(Integer stock);
+        // ==================== FILTROS POR STOCK ====================
 
-    /**
-     * Buscar productos con stock bajo
-     */
-    @Query("SELECT p FROM Producto p WHERE p.stock < :umbral AND p.stock > 0")
-    List<Producto> findProductosConStockBajo(@Param("umbral") Integer umbral);
+        /**
+         * Contar productos con stock bajo (menor a umbral)
+         */
+        Long countByStockLessThan(Integer stock);
 
-    /**
-     * Buscar productos sin stock
-     */
-    Page<Producto> findByStock(Integer stock, Pageable pageable);
+        /**
+         * Contar productos con stock menor o igual
+         */
+        Long countByStockLessThanEqual(Integer stock);
 
-    // ==================== PRODUCTOS DESTACADOS ====================
+        /**
+         * Buscar productos con stock bajo
+         */
+        @Query("SELECT p FROM Producto p WHERE p.stock < :umbral AND p.stock > 0")
+        List<Producto> findProductosConStockBajo(@Param("umbral") Integer umbral);
 
-    /**
-     * Buscar productos destacados
-     */
-    Page<Producto> findByDestacadoTrue(Pageable pageable);
+        /**
+         * Buscar productos sin stock
+         */
+        Page<Producto> findByStock(Integer stock, Pageable pageable);
 
-    /**
-     * Buscar destacados por estado
-     */
-    List<Producto> findByDestacadoTrueAndEstado(EstadoProducto estado);
+        // ==================== PRODUCTOS DESTACADOS ====================
 
-    /**
-     * Buscar destacados aprobados (paginado)
-     */
-    Page<Producto> findByDestacadoTrueAndEstado(EstadoProducto estado, Pageable pageable);
+        /**
+         * Buscar productos destacados
+         */
+        Page<Producto> findByDestacadoTrue(Pageable pageable);
 
-    // ==================== TOP PRODUCTOS ====================
+        /**
+         * Buscar destacados por estado
+         */
+        List<Producto> findByDestacadoTrueAndEstado(EstadoProducto estado);
 
-    /**
-     * Productos más vendidos (por reviews)
-     */
-    @Query("SELECT p FROM Producto p WHERE p.estado = 'APROBADO' ORDER BY p.cantidadReviews DESC")
-    List<Producto> findTopProductos(Pageable pageable);
+        /**
+         * Buscar destacados aprobados (paginado)
+         */
+        Page<Producto> findByDestacadoTrueAndEstado(EstadoProducto estado, Pageable pageable);
 
-    /**
-     * Productos mejor calificados
-     */
-    @Query("SELECT p FROM Producto p WHERE p.estado = 'APROBADO' AND p.cantidadReviews > 0 " +
-            "ORDER BY p.calificacionPromedio DESC, p.cantidadReviews DESC")
-    List<Producto> findTopCalificados(Pageable pageable);
+        // ==================== TOP PRODUCTOS ====================
 
-    /**
-     * Productos más recientes
-     */
-    Page<Producto> findByEstadoOrderByFechaCreacionDesc(EstadoProducto estado, Pageable pageable);
+        /**
+         * Productos más vendidos (por reviews)
+         */
+        @Query("SELECT p FROM Producto p WHERE p.estado = 'APROBADO' ORDER BY p.cantidadReviews DESC")
+        List<Producto> findTopProductos(Pageable pageable);
 
-    // ==================== ESTADÍSTICAS ====================
+        /**
+         * Productos mejor calificados
+         */
+        @Query("SELECT p FROM Producto p WHERE p.estado = 'APROBADO' AND p.cantidadReviews > 0 " +
+                        "ORDER BY p.calificacionPromedio DESC, p.cantidadReviews DESC")
+        List<Producto> findTopCalificados(Pageable pageable);
 
-    /**
-     * Contar todos los productos
-     */
-    @Query("SELECT COUNT(p) FROM Producto p")
-    Long contarTodos();
+        /**
+         * Productos más recientes
+         */
+        Page<Producto> findByEstadoOrderByFechaCreacionDesc(EstadoProducto estado, Pageable pageable);
 
-    /**
-     * Calcular precio promedio
-     */
-    @Query("SELECT AVG(p.precio) FROM Producto p WHERE p.estado = 'APROBADO'")
-    BigDecimal calcularPrecioPromedio();
+        // ==================== ESTADÍSTICAS ====================
 
-    /**
-     * Obtener productos mejor calificados
-     */
-    @Query("SELECT p FROM Producto p " +
-            "WHERE p.estado = 'APROBADO' AND p.cantidadReviews > 0 " +
-            "ORDER BY p.calificacionPromedio DESC, p.cantidadReviews DESC")
-    List<Producto> findTopProductosPorCalificacion(Pageable pageable);
+        /**
+         * Contar todos los productos
+         */
+        @Query("SELECT COUNT(p) FROM Producto p")
+        Long contarTodos();
 
-    /**
-     * Contar productos con stock específico
-     */
-    Long countByStock(Integer stock);
+        /**
+         * Calcular precio promedio
+         */
+        @Query("SELECT AVG(p.precio) FROM Producto p WHERE p.estado = 'APROBADO'")
+        BigDecimal calcularPrecioPromedio();
 
-    /**
-     * Obtener productos con stock bajo (menos de 10 unidades)
-     */
-    @Query(value = "SELECT COUNT(*) FROM productos WHERE stock < 10 AND stock > 0", nativeQuery = true)
-    Long countProductosStockBajo();
+        /**
+         * Obtener productos mejor calificados
+         */
+        @Query("SELECT p FROM Producto p " +
+                        "WHERE p.estado = 'APROBADO' AND p.cantidadReviews > 0 " +
+                        "ORDER BY p.calificacionPromedio DESC, p.cantidadReviews DESC")
+        List<Producto> findTopProductosPorCalificacion(Pageable pageable);
 
-    /**
-     * Obtener productos sin stock
-     */
-    @Query(value = "SELECT COUNT(*) FROM productos WHERE stock = 0", nativeQuery = true)
-    Long countProductosSinStock();
+        /**
+         * Contar productos con stock específico
+         */
+        Long countByStock(Integer stock);
 
-    
-    // Buscar por categoría y estado
-    Page<Producto> findByCategoriaIdAndEstado(Integer categoriaId, EstadoProducto estado, Pageable pageable);
-    
-    
-    // Buscar por nombre (búsqueda)
-    Page<Producto> findByNombreContainingIgnoreCaseAndEstado(String nombre, EstadoProducto estado, Pageable pageable);
+        /**
+         * Obtener productos con stock bajo (menos de 10 unidades)
+         */
+        @Query(value = "SELECT COUNT(*) FROM productos WHERE stock < 10 AND stock > 0", nativeQuery = true)
+        Long countProductosStockBajo();
+
+        /**
+         * Obtener productos sin stock
+         */
+        @Query(value = "SELECT COUNT(*) FROM productos WHERE stock = 0", nativeQuery = true)
+        Long countProductosSinStock();
+
+        // Buscar por categoría y estado
+        Page<Producto> findByCategoriaIdAndEstado(Integer categoriaId, EstadoProducto estado, Pageable pageable);
+
+        // Buscar por nombre (búsqueda)
+        Page<Producto> findByNombreContainingIgnoreCaseAndEstado(String nombre, EstadoProducto estado,
+                        Pageable pageable);
 
 }

@@ -88,5 +88,44 @@ export default {
       }
     })
     return response.data
+  },
+
+    // Obtener productos destacados
+  async getFeaturedProducts() {
+    const response = await api.get('/productos/destacados')
+    return response.data
+  },
+
+  // ==================== MODERACIÓN ====================
+  
+  // Obtener productos por estado (para moderadores)
+  async getProductsByStatus(status, params = {}) {
+    const response = await api.get(`/productos/estado/${status}`, { params })
+    return response.data
+  },
+
+  // Aprobar producto (moderadores)
+  async approveProduct(id) {
+    const response = await api.post(`/productos/${id}/aprobar`)
+    return response.data
+  },
+
+  // Rechazar producto (moderadores)
+  async rejectProduct(id) {
+    const response = await api.post(`/productos/${id}/rechazar`)
+    return response.data
+  },
+
+  // Subir imagen de producto
+  async uploadImage(productId, imageFile) {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+    const response = await api.post(`/productos/${productId}/imagen`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
   }
+
 }

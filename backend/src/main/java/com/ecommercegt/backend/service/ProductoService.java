@@ -1,5 +1,6 @@
 package com.ecommercegt.backend.service;
 
+import com.ecommercegt.backend.dto.request.CrearProductoRequest;
 import com.ecommercegt.backend.dto.request.ProductoRequest;
 import com.ecommercegt.backend.dto.request.ProductoUpdateRequest;
 import com.ecommercegt.backend.dto.response.ProductoResponse;
@@ -16,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.ecommercegt.backend.dto.request.CrearProductoRequest;
+import com.ecommercegt.backend.dto.request.ActualizarProductoRequest;
+import java.util.Optional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -24,16 +27,16 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProductoService {
-    
+
     @Autowired
     private ProductoRepository productoRepository;
-    
+
     @Autowired
     private CategoriaRepository categoriaRepository;
-    
+
     @Autowired
     private UsuarioRepository usuarioRepository;
-    
+
     /**
      * Crear nuevo producto
      */
@@ -43,11 +46,11 @@ public class ProductoService {
         String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario vendedor = usuarioRepository.findByNombreUsuario(nombreUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         // Verificar que la categoría existe
         Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + request.getCategoriaId()));
-        
+
         // Crear producto
         Producto producto = new Producto();
         producto.setNombre(request.getNombre());
@@ -61,13 +64,13 @@ public class ProductoService {
         producto.setVendedor(vendedor);
         producto.setEstado(EstadoProducto.PENDIENTE_REVISION); // Siempre empieza pendiente
         producto.setDestacado(request.getDestacado() != null ? request.getDestacado() : false);
-        
+
         // Guardar
         Producto guardado = productoRepository.save(producto);
-        
+
         return convertirAResponse(guardado);
     }
-    
+
     /**
      * Listar todos los productos (paginado)
      */
@@ -76,7 +79,7 @@ public class ProductoService {
         return productoRepository.findAll(pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Listar productos aprobados con stock (para tienda pública)
      */
@@ -85,17 +88,7 @@ public class ProductoService {
         return productoRepository.findByEstadoAndStockGreaterThan(EstadoProducto.APROBADO, 0, pageable)
                 .map(this::convertirAResponse);
     }
-    
-    /**
-     * Obtener producto por ID
-     */
-    @Transactional(readOnly = true)
-    public ProductoResponse obtenerProductoPorId(UUID id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        return convertirAResponse(producto);
-    }
-    
+
     /**
      * Actualizar producto
      */
@@ -103,21 +96,21 @@ public class ProductoService {
     public ProductoResponse actualizarProducto(UUID id, ProductoUpdateRequest request) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        
+
         // Verificar que el usuario actual es el vendedor o es moderador/admin
         String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         boolean esVendedor = producto.getVendedor().getId().equals(usuario.getId());
         boolean esModerador = usuario.getRoles().stream()
-                .anyMatch(rol -> rol.getNombre().name().equals("MODERADOR") || 
-                                rol.getNombre().name().equals("ADMIN"));
-        
+                .anyMatch(rol -> rol.getNombre().name().equals("MODERADOR") ||
+                        rol.getNombre().name().equals("ADMIN"));
+
         if (!esVendedor && !esModerador) {
             throw new RuntimeException("No tienes permiso para editar este producto");
         }
-        
+
         // Actualizar campos
         if (request.getNombre() != null) {
             producto.setNombre(request.getNombre());
@@ -149,20 +142,20 @@ public class ProductoService {
                     .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
             producto.setCategoria(categoria);
         }
-        
+
         // Solo moderadores pueden cambiar el estado
         if (request.getEstado() != null && esModerador) {
             producto.setEstado(request.getEstado());
         }
-        
+
         if (request.getDestacado() != null && esModerador) {
             producto.setDestacado(request.getDestacado());
         }
-        
+
         Producto actualizado = productoRepository.save(producto);
         return convertirAResponse(actualizado);
     }
-    
+
     /**
      * Eliminar producto
      */
@@ -170,23 +163,23 @@ public class ProductoService {
     public void eliminarProducto(UUID id) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        
+
         // Verificar permisos
         String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         boolean esVendedor = producto.getVendedor().getId().equals(usuario.getId());
         boolean esAdmin = usuario.getRoles().stream()
                 .anyMatch(rol -> rol.getNombre().name().equals("ADMIN"));
-        
+
         if (!esVendedor && !esAdmin) {
             throw new RuntimeException("No tienes permiso para eliminar este producto");
         }
-        
+
         productoRepository.delete(producto);
     }
-    
+
     /**
      * Buscar productos por término
      */
@@ -195,7 +188,7 @@ public class ProductoService {
         return productoRepository.buscarProductos(query, pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Listar productos por categoría
      */
@@ -204,7 +197,7 @@ public class ProductoService {
         return productoRepository.findByCategoriaId(categoriaId, pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Listar productos por vendedor
      */
@@ -213,7 +206,7 @@ public class ProductoService {
         return productoRepository.findByVendedorId(vendedorId, pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Listar productos por estado (para moderadores)
      */
@@ -222,7 +215,7 @@ public class ProductoService {
         return productoRepository.findByEstado(estado, pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Filtrar productos por rango de precio
      */
@@ -231,7 +224,7 @@ public class ProductoService {
         return productoRepository.findByPrecioBetween(precioMin, precioMax, pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Obtener productos destacados
      */
@@ -241,7 +234,7 @@ public class ProductoService {
                 .map(this::convertirAResponse)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Aprobar producto (solo moderadores)
      */
@@ -249,13 +242,13 @@ public class ProductoService {
     public ProductoResponse aprobarProducto(UUID id) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        
+
         producto.setEstado(EstadoProducto.APROBADO);
         Producto actualizado = productoRepository.save(producto);
-        
+
         return convertirAResponse(actualizado);
     }
-    
+
     /**
      * Rechazar producto (solo moderadores)
      */
@@ -263,13 +256,13 @@ public class ProductoService {
     public ProductoResponse rechazarProducto(UUID id) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        
+
         producto.setEstado(EstadoProducto.RECHAZADO);
         Producto actualizado = productoRepository.save(producto);
-        
+
         return convertirAResponse(actualizado);
     }
-    
+
     /**
      * Obtener mis productos (vendedor actual)
      */
@@ -278,11 +271,11 @@ public class ProductoService {
         String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario vendedor = usuarioRepository.findByNombreUsuario(nombreUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         return productoRepository.findByVendedorId(vendedor.getId(), pageable)
                 .map(this::convertirAResponse);
     }
-    
+
     /**
      * Convertir entidad a DTO Response
      */
@@ -299,29 +292,157 @@ public class ProductoService {
         response.setModelo(producto.getModelo());
         response.setEstado(producto.getEstado());
         response.setDestacado(producto.getDestacado());
-        
+
         // Categoría
         response.setCategoriaId(producto.getCategoria().getId());
         response.setCategoriaNombre(producto.getCategoria().getNombre());
-        
+
         // Vendedor
         response.setVendedorId(producto.getVendedor().getId());
         response.setVendedorNombre(producto.getVendedor().getNombreCompleto());
-        
+
         // Imágenes
         response.setImagenes(producto.getImagenes().stream()
                 .map(img -> img.getUrlImagen())
                 .collect(Collectors.toList()));
-        
+
         producto.getImagenes().stream()
                 .filter(img -> img.getEsPrincipal())
                 .findFirst()
                 .ifPresent(img -> response.setImagenPrincipal(img.getUrlImagen()));
-        
+
         // Fechas
         response.setFechaCreacion(producto.getFechaCreacion());
         response.setFechaActualizacion(producto.getFechaActualizacion());
-        
+
         return response;
+    }
+
+    /**
+     * Crear producto con CrearProductoRequest
+     */
+    @Transactional
+    public Producto crearProducto(CrearProductoRequest request, Usuario vendedor) {
+
+        Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + request.getCategoriaId()));
+
+        Producto producto = new Producto();
+        producto.setNombre(request.getNombre());
+        producto.setDescripcion(request.getDescripcion());
+        producto.setPrecio(request.getPrecio());
+        producto.setPrecioDescuento(request.getPrecioDescuento());
+        producto.setStock(request.getStock());
+        producto.setMarca(request.getMarca());
+        producto.setModelo(request.getModelo());
+        producto.setCategoria(categoria);
+        producto.setVendedor(vendedor);
+        producto.setEstado(EstadoProducto.PENDIENTE_REVISION); // Siempre empieza pendiente
+        producto.setDestacado(request.getDestacado() != null ? request.getDestacado() : false);
+
+        return productoRepository.save(producto);
+    }
+
+    /**
+     * Actualizar producto con ActualizarProductoRequest y verificación de vendedor
+     */
+    @Transactional
+    public Producto actualizarProducto(UUID id, ActualizarProductoRequest request, Usuario vendedor) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
+
+        // Verificar que el usuario actual es el vendedor del producto
+        if (!producto.getVendedor().getId().equals(vendedor.getId())) {
+            throw new RuntimeException("No tienes permiso para editar este producto");
+        }
+
+        // Actualizar campos
+        producto.setNombre(request.getNombre());
+        producto.setDescripcion(request.getDescripcion());
+        producto.setPrecio(request.getPrecio());
+        producto.setPrecioDescuento(request.getPrecioDescuento());
+        producto.setStock(request.getStock());
+        producto.setMarca(request.getMarca());
+        producto.setModelo(request.getModelo());
+
+        if (request.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
+                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+            producto.setCategoria(categoria);
+        }
+
+        if (request.getDestacado() != null) {
+            producto.setDestacado(request.getDestacado());
+        }
+
+        // Al actualizar, vuelve a PENDIENTE_REVISION
+        producto.setEstado(EstadoProducto.PENDIENTE_REVISION);
+
+        return productoRepository.save(producto);
+    }
+
+    /**
+     * Listar productos por vendedor (retorna List en lugar de Page)
+     */
+    @Transactional(readOnly = true)
+    public List<Producto> listarProductosPorVendedor(UUID vendedorId) {
+        return productoRepository.findByVendedorId(vendedorId);
+    }
+
+    /**
+     * Listar productos por estado (retorna List en lugar de Page)
+     */
+    @Transactional(readOnly = true)
+    public List<Producto> listarProductosPorEstado(EstadoProducto estado) {
+        return productoRepository.findByEstado(estado);
+    }
+
+    /**
+     * Obtener producto por ID (retorna ProductoResponse)
+     */
+    @Transactional(readOnly = true)
+    public ProductoResponse obtenerProductoPorId(UUID id) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
+        return convertirAResponse(producto);
+    }
+
+    /**
+     * Pausar/reanudar producto
+     */
+    @Transactional
+    public Producto pausarProducto(UUID id, Usuario vendedor) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        if (!producto.getVendedor().getId().equals(vendedor.getId())) {
+            throw new RuntimeException("No tienes permiso para modificar este producto");
+        }
+
+        // Toggle entre APROBADO y PAUSADO
+        if (producto.getEstado() == EstadoProducto.APROBADO) {
+            producto.setEstado(EstadoProducto.PAUSADO);
+        } else if (producto.getEstado() == EstadoProducto.PAUSADO) {
+            producto.setEstado(EstadoProducto.APROBADO);
+        } else {
+            throw new RuntimeException("Solo se pueden pausar productos aprobados");
+        }
+
+        return productoRepository.save(producto);
+    }
+
+    /**
+     * Eliminar producto con verificación de vendedor
+     */
+    @Transactional
+    public void eliminarProducto(UUID id, Usuario vendedor) {
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        if (!producto.getVendedor().getId().equals(vendedor.getId())) {
+            throw new RuntimeException("No tienes permiso para eliminar este producto");
+        }
+
+        productoRepository.delete(producto);
     }
 }
