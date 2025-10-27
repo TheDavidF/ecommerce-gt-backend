@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-3xl mx-auto px-4">
+        <router-link 
+        to="/mis-productos" 
+        class="text-blue-600 hover:text-blue-800 flex items-center mb-4"
+      >
+        ← Volver a mis productos
+      </router-link>
       <!-- Header -->
       <div class="mb-6">
         <router-link 

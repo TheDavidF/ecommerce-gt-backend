@@ -1,6 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4">
+      <router-link 
+        to="/" 
+        class="inline-block text-blue-600 hover:text-blue-800 mb-6 font-medium"
+      >
+        ← Volver al inicio
+      </router-link>
+      
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <div>

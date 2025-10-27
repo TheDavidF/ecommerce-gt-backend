@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-6xl mx-auto px-4">
+        <router-link 
+        to="/mis-productos" 
+        class="text-blue-600 hover:text-blue-800 flex items-center mb-4"
+      >
+        ← Volver a mis productos
+      </router-link>
       <!-- Loading -->
       <div v-if="loading" class="text-center py-12">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>

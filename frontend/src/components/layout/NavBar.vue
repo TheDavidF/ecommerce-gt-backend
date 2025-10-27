@@ -17,32 +17,19 @@
           <!-- Si NO está logueado -->
           <template v-if="!authStore.isAuthenticated">
             <router-link to="/" class="nav-link"> Inicio </router-link>
-            <router-link to="/productos" class="nav-link">
-              Productos
-            </router-link>
-            <router-link to="/login" class="btn-primary">
-              Iniciar Sesión
-            </router-link>
-            <router-link to="/register" class="btn-secondary">
-              Registrarse
-            </router-link>
+            <router-link to="/productos" class="nav-link"> Productos </router-link>
+            <router-link to="/login" class="btn-primary"> Iniciar Sesión </router-link>
+            <router-link to="/register" class="btn-secondary"> Registrarse </router-link>
           </template>
 
           <!-- Si está logueado -->
           <template v-else>
             <!-- Enlaces comunes -->
             <router-link to="/" class="nav-link"> Inicio </router-link>
+            <router-link to="/productos" class="nav-link"> Productos </router-link>
 
-            <router-link to="/productos" class="nav-link">
-              Productos
-            </router-link>
-
-            <!-- Link Admin con dropdown -->
-            <div
-              v-if="authStore.isAdmin"
-              class="relative"
-              ref="adminDropdownRef"
-            >
+            <!-- SOLO muestra el menú del rol principal -->
+            <div v-if="mainRole === 'ADMIN'" class="relative" ref="adminDropdownRef">
               <button
                 @click="toggleAdminDropdown"
                 class="nav-link-special admin flex items-center"
@@ -63,85 +50,65 @@
                   ></path>
                 </svg>
               </button>
-
               <!-- Admin Dropdown Menu -->
               <Transition name="dropdown">
                 <div v-if="showAdminDropdown" class="dropdown-menu">
-                  <router-link
-                    to="/admin/usuarios"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Usuarios
-                  </router-link>
-                  <router-link
-                    to="/admin/productos"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Productos
-                  </router-link>
-                  <router-link
-                    to="/admin/pedidos"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Pedidos
-                  </router-link>
-                  <router-link
-                    to="/admin/estadisticas"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Estadisticas
-                  </router-link>
-                  <router-link
-                    to="/admin/reportes"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Reportes
-                  </router-link>
-
-                   <router-link
-                    to="/logistica"
-                    class="dropdown-item"
-                    @click="closeAdminDropdown"
-                  >
-                    Logística
-                  </router-link>
+                  <router-link to="/admin/usuarios" class="dropdown-item" @click="closeAdminDropdown">Usuarios</router-link>
+                  <router-link to="/admin/productos" class="dropdown-item" @click="closeAdminDropdown">Productos</router-link>
+                  <router-link to="/admin/pedidos" class="dropdown-item" @click="closeAdminDropdown">Pedidos</router-link>
+                  <router-link to="/admin/estadisticas" class="dropdown-item" @click="closeAdminDropdown">Estadisticas</router-link>
+                  <router-link to="/admin/reportes" class="dropdown-item" @click="closeAdminDropdown">Reportes</router-link>
+                  <router-link to="/logistica" class="dropdown-item" @click="closeAdminDropdown">Logística</router-link>
                 </div>
               </Transition>
             </div>
 
-            <!-- Link Moderador -->
             <router-link
-              v-if="authStore.isModerador || authStore.isAdmin"
+              v-if="mainRole === 'MODERADOR'"
               to="/moderador/productos"
               class="nav-link-special moderador"
             >
               Moderación
             </router-link>
 
-            <!-- Link Vendedor -->
             <router-link
-              v-if="authStore.isVendedor || authStore.isAdmin"
+              v-if="mainRole === 'VENDEDOR'"
               to="/vendedor/dashboard"
               class="nav-link"
             >
               Mis Productos
             </router-link>
 
-            <!-- Carrito con contador -->
+            <router-link
+              v-if="mainRole === 'LOGISTICA'"
+              to="/logistica"
+              class="nav-link"
+            >
+              Logística
+            </router-link>
+
+            <!-- Enlaces para usuario COMUN -->
+            <router-link
+              v-if="mainRole === 'COMUN'"
+              to="/mis-productos"
+              class="nav-link"
+            >
+              Mis Productos
+            </router-link>
+            <router-link
+              v-if="mainRole === 'COMUN'"
+              to="/mis-pedidos"
+              class="nav-link"
+            >
+              Mis Pedidos
+            </router-link>
+
+            <!-- Carrito con contador (todos los roles) -->
             <router-link to="/carrito" class="nav-link relative">
               Carrito
               <span v-if="cartStore.itemCount > 0" class="cart-badge">
                 {{ cartStore.itemCount }}
               </span>
-            </router-link>
-
-            <router-link to="/mis-pedidos" class="nav-link">
-              Pedidos
             </router-link>
 
             <!-- Usuario dropdown -->
@@ -167,25 +134,10 @@
               <!-- Dropdown Menu -->
               <Transition name="dropdown">
                 <div v-if="showDropdown" class="dropdown-menu">
-                  <router-link
-                    to="/perfil"
-                    class="dropdown-item"
-                    @click="closeDropdown"
-                  >
-                    Mi Perfil
-                  </router-link>
-                  <router-link
-                    to="/configuracion"
-                    class="dropdown-item"
-                    @click="closeDropdown"
-                  >
-                    Configuración
-                  </router-link>
+                  <router-link to="/perfil" class="dropdown-item" @click="closeDropdown">Mi Perfil</router-link>
+                  <router-link to="/configuracion" class="dropdown-item" @click="closeDropdown">Configuración</router-link>
                   <hr class="my-1 border-gray-200" />
-                  <button
-                    @click="handleLogout"
-                    class="dropdown-item text-red-600 hover:bg-red-50 w-full text-left"
-                  >
+                  <button @click="handleLogout" class="dropdown-item text-red-600 hover:bg-red-50 w-full text-left">
                     Cerrar Sesión
                   </button>
                 </div>
@@ -196,30 +148,10 @@
 
         <!-- Mobile menu button -->
         <div class="md:hidden flex items-center">
-          <button
-            @click="toggleMobileMenu"
-            class="text-gray-700 hover:text-blue-600 p-2"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                v-if="!showMobileMenu"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              ></path>
-              <path
-                v-else
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
+          <button @click="toggleMobileMenu" class="text-gray-700 hover:text-blue-600 p-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="!showMobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
         </div>
@@ -227,112 +159,35 @@
 
       <!-- Mobile Menu -->
       <Transition name="mobile-menu">
-        <div
-          v-if="showMobileMenu"
-          class="md:hidden pb-4 border-t border-gray-200 mt-2"
-        >
+        <div v-if="showMobileMenu" class="md:hidden pb-4 border-t border-gray-200 mt-2">
           <template v-if="!authStore.isAuthenticated">
-            <router-link to="/" class="mobile-link" @click="closeMobileMenu">
-              Inicio
-            </router-link>
-            <router-link
-              to="/productos"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Productos
-            </router-link>
-            <router-link
-              to="/login"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Iniciar Sesión
-            </router-link>
-            <router-link
-              to="/register"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Registrarse
-            </router-link>
+            <router-link to="/" class="mobile-link" @click="closeMobileMenu">Inicio</router-link>
+            <router-link to="/productos" class="mobile-link" @click="closeMobileMenu">Productos</router-link>
+            <router-link to="/login" class="mobile-link" @click="closeMobileMenu">Iniciar Sesión</router-link>
+            <router-link to="/register" class="mobile-link" @click="closeMobileMenu">Registrarse</router-link>
           </template>
 
           <template v-else>
-            <div
-              class="px-3 py-2 text-sm text-gray-500 border-b border-gray-200 mb-2"
-            >
-              Hola,
-              <strong class="text-blue-600">{{ authStore.username }}</strong>
+            <div class="px-3 py-2 text-sm text-gray-500 border-b border-gray-200 mb-2">
+              Hola, <strong class="text-blue-600">{{ authStore.username }}</strong>
             </div>
 
-            <router-link to="/" class="mobile-link" @click="closeMobileMenu">
-              Inicio
-            </router-link>
+            <router-link to="/" class="mobile-link" @click="closeMobileMenu">Inicio</router-link>
+            <router-link to="/productos" class="mobile-link" @click="closeMobileMenu">Productos</router-link>
 
-            <router-link
-              to="/productos"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Productos
-            </router-link>
-
-            <!-- Admin links en mobile -->
-            <div
-              v-if="authStore.isAdmin"
-              class="border-t border-gray-200 mt-2 pt-2"
-            >
-              <div class="px-3 py-2 text-xs font-semibold text-red-600">
-                ADMINISTRACION
-              </div>
-              <router-link
-                to="/admin/usuarios"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Usuarios
-              </router-link>
-              <router-link
-                to="/admin/productos"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Productos
-              </router-link>
-              <router-link
-                to="/admin/pedidos"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Pedidos
-              </router-link>
-              <router-link
-                to="/admin/estadisticas"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Estadisticas
-              </router-link>
-              <router-link
-                to="/admin/reportes"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Reportes
-              </router-link>
-
-              <router-link
-                to="/logistica"
-                class="mobile-link-special admin"
-                @click="closeMobileMenu"
-              >
-                Logística
-              </router-link>
+            <!-- SOLO muestra el menú del rol principal en mobile -->
+            <div v-if="mainRole === 'ADMIN'" class="border-t border-gray-200 mt-2 pt-2">
+              <div class="px-3 py-2 text-xs font-semibold text-red-600">ADMINISTRACION</div>
+              <router-link to="/admin/usuarios" class="mobile-link-special admin" @click="closeMobileMenu">Usuarios</router-link>
+              <router-link to="/admin/productos" class="mobile-link-special admin" @click="closeMobileMenu">Productos</router-link>
+              <router-link to="/admin/pedidos" class="mobile-link-special admin" @click="closeMobileMenu">Pedidos</router-link>
+              <router-link to="/admin/estadisticas" class="mobile-link-special admin" @click="closeMobileMenu">Estadisticas</router-link>
+              <router-link to="/admin/reportes" class="mobile-link-special admin" @click="closeMobileMenu">Reportes</router-link>
+              <router-link to="/logistica" class="mobile-link-special admin" @click="closeMobileMenu">Logística</router-link>
             </div>
 
             <router-link
-              v-if="authStore.isModerador || authStore.isAdmin"
+              v-if="mainRole === 'MODERADOR'"
               to="/moderador/productos"
               class="mobile-link-special moderador"
               @click="closeMobileMenu"
@@ -341,7 +196,7 @@
             </router-link>
 
             <router-link
-              v-if="authStore.isVendedor || authStore.isAdmin"
+              v-if="mainRole === 'VENDEDOR'"
               to="/vendedor/dashboard"
               class="mobile-link"
               @click="closeMobileMenu"
@@ -350,20 +205,25 @@
             </router-link>
 
             <router-link
-              to="/carrito"
+              v-if="mainRole === 'LOGISTICA'"
+              to="/logistica"
               class="mobile-link"
               @click="closeMobileMenu"
             >
-              Carrito
-              <span
-                v-if="cartStore.itemCount > 0"
-                class="text-red-600 font-bold ml-1"
-              >
-                ({{ cartStore.itemCount }})
-              </span>
+              Logística
             </router-link>
 
+            <!-- Enlaces para usuario COMUN -->
             <router-link
+              v-if="mainRole === 'COMUN'"
+              to="/mis-productos"
+              class="mobile-link"
+              @click="closeMobileMenu"
+            >
+              Mis Productos
+            </router-link>
+            <router-link
+              v-if="mainRole === 'COMUN'"
               to="/mis-pedidos"
               class="mobile-link"
               @click="closeMobileMenu"
@@ -371,28 +231,15 @@
               Mis Pedidos
             </router-link>
 
-            <router-link
-              to="/perfil"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Mi Perfil
+            <router-link to="/carrito" class="mobile-link" @click="closeMobileMenu">
+              Carrito
+              <span v-if="cartStore.itemCount > 0" class="text-red-600 font-bold ml-1">({{ cartStore.itemCount }})</span>
             </router-link>
 
-            <router-link
-              to="/configuracion"
-              class="mobile-link"
-              @click="closeMobileMenu"
-            >
-              Configuración
-            </router-link>
+            <router-link to="/perfil" class="mobile-link" @click="closeMobileMenu">Mi Perfil</router-link>
+            <router-link to="/configuracion" class="mobile-link" @click="closeMobileMenu">Configuración</router-link>
 
-            <button
-              @click="handleLogout"
-              class="mobile-link text-red-600 hover:bg-red-50 w-full text-left"
-            >
-              Cerrar Sesión
-            </button>
+            <button @click="handleLogout" class="mobile-link text-red-600 hover:bg-red-50 w-full text-left">Cerrar Sesión</button>
           </template>
         </div>
       </Transition>
@@ -401,7 +248,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { useCartStore } from "../../stores/cart";
@@ -468,6 +315,14 @@ onMounted(() => {
   if (authStore.isAuthenticated) {
     cartStore.fetchCart();
   }
+});
+
+// Getter para el rol principal
+const mainRole = computed(() => {
+  // Prioridad: ADMIN > MODERADOR > VENDEDOR > LOGISTICA > COMUN
+  const priority = ["ADMIN", "MODERADOR", "VENDEDOR", "LOGISTICA", "COMUN"];
+  const userRoles = authStore.user?.roles || [];
+  return priority.find((role) => userRoles.includes(role));
 });
 
 onUnmounted(() => {
