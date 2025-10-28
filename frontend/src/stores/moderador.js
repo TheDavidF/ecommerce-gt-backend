@@ -25,7 +25,11 @@ export const useModeradorStore = defineStore('moderador', {
     // Reviews pendientes
     reviewsPendientes: [],
     totalReviewsPendientes: 0,
-    loadingReviews: false
+    loadingReviews: false,
+    // Sanciones globales
+    sanciones: [],
+    totalSanciones: 0,
+    loadingSanciones: false
   }),
 
   getters: {
@@ -42,6 +46,57 @@ export const useModeradorStore = defineStore('moderador', {
   },
 
   actions: {
+    // ==================== SANCIONES ====================
+    async fetchSanciones(page = 0, size = 20) {
+      this.loadingSanciones = true
+      try {
+        // Obtener el UUID del moderador autenticado
+        const { useAuthStore } = await import('./auth.js')
+        const auth = useAuthStore()
+        // Buscar el campo UUID correcto del usuario autenticado
+        let moderadorId = null
+        if (auth.user) {
+          moderadorId = auth.user.id || auth.user.uuid || auth.user.moderadorId || null
+        }
+        if (!moderadorId || typeof moderadorId !== 'string' || moderadorId.length < 10) {
+          throw new Error('No se encontró un UUID válido para el moderador autenticado. Revisa el objeto user en el store de auth.')
+        }
+        const response = await import('../services/sancionService').then(m => m.default.listarSancionesPorModerador(moderadorId, page, size))
+        this.sanciones = response.content || []
+        this.totalSanciones = response.totalElements || 0
+      } catch (error) {
+        console.error('Error al cargar sanciones:', error)
+        this.sanciones = []
+      } finally {
+        this.loadingSanciones = false
+      }
+    },
+
+    async crearSancion({ usuarioId, moderadorId, razon, fechaFin }) {
+      try {
+        const response = await import('../services/sancionService').then(m => m.default.crearSancion({ usuarioId, moderadorId, razon, fechaFin }))
+        this.sanciones.unshift(response)
+        toast.success('Sanción aplicada correctamente')
+        return true
+      } catch (error) {
+        console.error('Error al crear sanción:', error)
+        toast.error('Error al aplicar sanción')
+        return false
+      }
+    },
+
+    async desactivarSancion(sancionId) {
+      try {
+        await import('../services/sancionService').then(m => m.default.desactivarSancion(sancionId))
+        this.sanciones = this.sanciones.map(s => s.id === sancionId ? { ...s, activa: false } : s)
+        toast.success('Sanción desactivada')
+        return true
+      } catch (error) {
+        console.error('Error al desactivar sanción:', error)
+        toast.error('Error al desactivar sanción')
+        return false
+      }
+    },
     // ==================== REVIEWS PENDIENTES ====================
     async fetchReviewsPendientes(page = 0, size = 10) {
       this.loadingReviews = true

@@ -1,9 +1,15 @@
 package com.ecommercegt.backend.service;
 
 import com.ecommercegt.backend.dto.response.*;
+import com.ecommercegt.backend.models.entidades.Sancion;
 import com.ecommercegt.backend.repositorios.ItemPedidoRepository;
 import com.ecommercegt.backend.repositorios.UsuarioReporteRepository;
+import com.ecommercegt.backend.service.NotificacionService;
+import com.ecommercegt.backend.service.SancionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +25,8 @@ public class ReporteService {
     
     private final ItemPedidoRepository itemPedidoRepository;
     private final UsuarioReporteRepository usuarioReporteRepository;
+    private final SancionService sancionService;
+    private final NotificacionService notificacionService;
     
     @Transactional(readOnly = true)
     public List<ReporteProductoResponse> getTop10ProductosMasVendidos(
@@ -147,5 +155,17 @@ public class ReporteService {
         }
         
         return reportes;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Sancion> getHistorialSanciones(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return sancionService.listarTodasLasSanciones(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<NotificacionResponse> getHistorialNotificaciones(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return notificacionService.obtenerTodasLasNotificaciones(pageable);
     }
 }

@@ -5,10 +5,15 @@ import com.ecommercegt.backend.dto.request.RegisterRequest;
 import com.ecommercegt.backend.dto.response.JwtResponse;
 import com.ecommercegt.backend.dto.response.MessageResponse;
 import com.ecommercegt.backend.service.AuthService;
+import com.ecommercegt.backend.security.service.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -36,24 +41,21 @@ public class AuthController {
     }
     
     /**
-     * Endpoint para registro de nuevos usuarios
-     * POST /api/auth/register
-     * @param registerRequest - Datos del nuevo usuario
-     * @return MessageResponse con resultado del registro
+     * Endpoint para obtener el usuario actualmente autenticado
+     * GET /api/auth/me
+     * @return Datos del usuario autenticado
      */
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        try {
-            MessageResponse response = authService.register(registerRequest);
-            
-            if (response.getMessage().startsWith("Error")) {
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error al registrar usuario: " + e.getMessage()));
-        }
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return ResponseEntity.ok(new JwtResponse(
+                null, // No devolver token en este endpoint
+                userDetails.getId(),
+                userDetails.getUsername(),
+                userDetails.getEmail(),
+                userDetails.getAuthorities().stream()
+                        .map(item -> item.getAuthority())
+                        .collect(Collectors.toList())
+        ));
     }
 }

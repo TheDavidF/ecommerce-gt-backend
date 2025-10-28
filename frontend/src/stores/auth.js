@@ -37,6 +37,8 @@ export const useAuthStore = defineStore("auth", {
         this.user = response;
         this.token = response.token;
         this.isAuthenticated = true;
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response));
         toast.success("¡Bienvenido!");
         return response;
       } catch (error) {
@@ -82,6 +84,8 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
       this.token = null;
       this.isAuthenticated = false;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       toast.info("Sesión cerrada");
     },
 

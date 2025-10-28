@@ -6,6 +6,7 @@ import com.ecommercegt.backend.dto.response.MessageResponse;
 import com.ecommercegt.backend.dto.response.ProductoResponse;
 import com.ecommercegt.backend.models.enums.EstadoProducto;
 import com.ecommercegt.backend.service.ProductoService;
+import com.ecommercegt.backend.service.NotificacionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,9 @@ public class ProductoController {
     
     @Autowired
     private ProductoService productoService;
+
+    @Autowired
+    private NotificacionService notificacionService;
     
     /**
      * Crear nuevo producto (usuarios autenticados)
@@ -238,6 +242,10 @@ public class ProductoController {
     public ResponseEntity<?> aprobarProducto(@PathVariable UUID id) {
         try {
             ProductoResponse response = productoService.aprobarProducto(id);
+            // Notificar al vendedor
+            if (response.getVendedorId() != null) {
+                notificacionService.notificarProductoAprobado(response.getVendedorId(), response.getId(), response.getNombre());
+            }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -254,6 +262,10 @@ public class ProductoController {
     public ResponseEntity<?> rechazarProducto(@PathVariable UUID id) {
         try {
             ProductoResponse response = productoService.rechazarProducto(id);
+            // Notificar al vendedor
+            if (response.getVendedorId() != null) {
+                notificacionService.notificarProductoRechazado(response.getVendedorId(), response.getId(), response.getNombre(), "Rechazado por moderador");
+            }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()

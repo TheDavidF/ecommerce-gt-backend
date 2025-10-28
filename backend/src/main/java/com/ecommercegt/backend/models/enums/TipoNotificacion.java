@@ -42,5 +42,20 @@ public enum TipoNotificacion {
     /**
      * Producto rechazado (para vendedores)
      */
-    PRODUCTO_RECHAZADO
+    PRODUCTO_RECHAZADO,
+
+    /**
+     * Usuario sancionado por moderador
+     */
+    USUARIO_SANCIONADO,
+
+    /**
+     * Sanción desactivada
+     */
+    SANCION_DESACTIVADA,
+
+    /**
+     * Fecha de entrega modificada
+     */
+    PEDIDO_FECHA_MODIFICADA
 }

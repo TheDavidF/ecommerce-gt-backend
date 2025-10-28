@@ -8,6 +8,8 @@ export const useReportesStore = defineStore('reportes', () => {
   const clientesPorVentas = ref([])
   const clientesPorPedidos = ref([])
   const clientesPorProductos = ref([])
+  const historialSanciones = ref([])
+  const historialNotificaciones = ref([])
   
   const loading = ref(false)
   const error = ref(null)
@@ -84,6 +86,32 @@ export const useReportesStore = defineStore('reportes', () => {
     } catch (err) {
       error.value = err.response?.data?.message || 'Error al cargar reporte'
       console.error('Error fetchClientesPorProductos:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchHistorialSanciones(page = 0, size = 20) {
+    loading.value = true
+    error.value = null
+    try {
+      historialSanciones.value = await reporteService.getHistorialSanciones(page, size)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al cargar historial de sanciones'
+      console.error('Error fetchHistorialSanciones:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchHistorialNotificaciones(page = 0, size = 20) {
+    loading.value = true
+    error.value = null
+    try {
+      historialNotificaciones.value = await reporteService.getHistorialNotificaciones(page, size)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al cargar historial de notificaciones'
+      console.error('Error fetchHistorialNotificaciones:', err)
     } finally {
       loading.value = false
     }

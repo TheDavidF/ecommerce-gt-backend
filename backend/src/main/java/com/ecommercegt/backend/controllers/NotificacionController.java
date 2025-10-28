@@ -1,5 +1,8 @@
 package com.ecommercegt.backend.controllers;
 
+import com.ecommercegt.backend.models.entidades.Notificacion;
+import com.ecommercegt.backend.dto.request.NotificacionRequest;
+
 import com.ecommercegt.backend.dto.response.NotificacionResponse;
 import com.ecommercegt.backend.security.service.UserDetailsImpl;
 import com.ecommercegt.backend.service.NotificacionService;
@@ -22,6 +25,22 @@ import java.util.UUID;
 @RequestMapping("/api/notificaciones")
 @CrossOrigin(origins = "*")
 public class NotificacionController {
+    /**
+     * Crear notificación desde el frontend
+     * POST /api/notificaciones
+     */
+    @PostMapping
+    public ResponseEntity<NotificacionResponse> crearNotificacion(@RequestBody NotificacionRequest request) {
+        Notificacion notificacion = notificacionService.crearNotificacionConDatos(
+            request.getUsuarioId(),
+            request.getTipo(),
+            request.getTitulo(),
+            request.getMensaje(),
+            request.getUrl(),
+            request.getDatos()
+        );
+        return ResponseEntity.ok(NotificacionResponse.fromNotificacion(notificacion));
+    }
     
     @Autowired
     private NotificacionService notificacionService;

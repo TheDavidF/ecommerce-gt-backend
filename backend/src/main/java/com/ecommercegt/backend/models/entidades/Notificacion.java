@@ -91,5 +91,6 @@ public class Notificacion {
         this.mensaje = mensaje;
         this.url = url;
         this.leida = false;
+        this.datos = null;
     }
 }

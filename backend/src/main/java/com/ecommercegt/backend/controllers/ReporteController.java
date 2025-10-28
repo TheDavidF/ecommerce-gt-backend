@@ -2,7 +2,9 @@ package com.ecommercegt.backend.controllers;
 
 import com.ecommercegt.backend.dto.response.*;
 import com.ecommercegt.backend.service.ReporteService;
+import com.ecommercegt.backend.models.entidades.Sancion;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -89,5 +91,29 @@ public class ReporteController {
             .getTop10ClientesPorProductos();
         
         return ResponseEntity.ok(reporte);
+    }
+    
+    @GetMapping("/historial-sanciones")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Page<Sancion>> getHistorialSanciones(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        Page<Sancion> sanciones = reporteService
+            .getHistorialSanciones(page, size);
+        
+        return ResponseEntity.ok(sanciones);
+    }
+    
+    @GetMapping("/historial-notificaciones")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Page<NotificacionResponse>> getHistorialNotificaciones(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        Page<NotificacionResponse> notificaciones = reporteService
+            .getHistorialNotificaciones(page, size);
+        
+        return ResponseEntity.ok(notificaciones);
     }
 }

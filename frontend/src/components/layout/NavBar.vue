@@ -102,6 +102,13 @@
             >
               Mis Pedidos
             </router-link>
+            <router-link
+              v-if="mainRole === 'COMUN'"
+              to="/notificaciones"
+              class="nav-link"
+            >
+              Notificaciones
+            </router-link>
 
             <!-- Carrito con contador (todos los roles) -->
             <router-link to="/carrito" class="nav-link relative">

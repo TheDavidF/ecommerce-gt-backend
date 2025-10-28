@@ -4,11 +4,19 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Panel de Moderación</h1>
-        <p class="text-gray-600">
-          Gestiona las solicitudes de publicación de productos
-        </p>
+      <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Panel de Moderación</h1>
+          <p class="text-gray-600">
+            Gestiona las solicitudes de publicación de productos
+          </p>
+        </div>
+        <router-link
+          to="/moderador/aplicar-sancion"
+          class="btn-primary px-4 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors"
+        >
+          Aplicar sanción
+        </router-link>
       </div>
 
       <!-- Estadísticas -->
@@ -159,6 +167,13 @@
         <p class="text-gray-600">
           No se encontraron solicitudes con el filtro seleccionado
         </p>
+      </div>
+
+      <!-- Enlace a historial de sanciones -->
+      <div class="mb-8">
+        <router-link to="/moderador/reportes-sanciones" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          Ver historial de sanciones
+        </router-link>
       </div>
     </div>
 

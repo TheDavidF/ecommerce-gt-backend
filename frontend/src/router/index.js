@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import Notificaciones from '@/views/Notificaciones.vue';
 
 const routes = [
   // ==================== RUTAS PÚBLICAS ====================
@@ -35,6 +36,12 @@ const routes = [
   },
 
   // ==================== RUTAS PROTEGIDAS (USUARIOS) ====================
+  {
+    path: "/notificaciones",
+    name: "Notificaciones",
+    component: Notificaciones,
+    meta: { requiresAuth: true },
+  },
   {
     path: "/carrito",
     name: "Cart",
@@ -144,6 +151,18 @@ const routes = [
     component: () => import("../views/moderador/ModeradorProductos.vue"),
     meta: { requiresAuth: true, requiresModerador: true },
   },
+  {
+    path: "/moderador/reportes-sanciones",
+    name: "moderador-reportes-sanciones",
+    component: () => import("../views/moderador/ReportesSanciones.vue"),
+    meta: { requiresAuth: true, requiresModerador: true },
+  },
+  {
+    path: "/moderador/aplicar-sancion",
+    name: "moderador-aplicar-sancion",
+    component: () => import("../views/moderador/AplicarSancion.vue"),
+    meta: { requiresAuth: true, requiresModerador: true },
+  },
 
   // ==================== RUTAS DE VENDEDOR ====================
   {
@@ -151,6 +170,11 @@ const routes = [
     name: "VendedorDashboard",
     component: () => import("../views/seller/Dashboard.vue"),
     meta: { requiresAuth: true, requiresVendedor: true },
+  },
+  {
+    path: '/notificaciones',
+    name: 'Notificaciones',
+    component: Notificaciones
   },
 
   // ==================== PÁGINAS DE ERROR ====================

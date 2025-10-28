@@ -277,7 +277,12 @@ const handleLogin = async () => {
       router.push("/");
     }
   } catch (err) {
-    console.error("Error login:", err);
+    // Log persistente y detallado
+    window._lastLoginError = err;
+    console.error("[LOGIN ERROR]", err);
+    if (err.response) {
+      console.error("[LOGIN ERROR RESPONSE]", err.response.data);
+    }
     error.value = "Credenciales incorrectas";
   } finally {
     loading.value = false;

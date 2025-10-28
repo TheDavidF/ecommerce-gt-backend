@@ -6,6 +6,7 @@ import com.ecommercegt.backend.dto.response.MessageResponse;
 import com.ecommercegt.backend.dto.response.PedidoResponse;
 import com.ecommercegt.backend.dto.response.ResumenPedidosResponse;
 import com.ecommercegt.backend.service.PedidoService;
+import com.ecommercegt.backend.service.NotificacionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.ecommercegt.backend.dto.request.ModificarFechaEntregaRequest;
-import com.ecommercegt.backend.models.enums.EstadoPedido;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +31,9 @@ public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
+
+    @Autowired
+    private NotificacionService notificacionService;
 
     /**
      * Crear pedido desde el carrito del usuario autenticado
@@ -116,6 +118,10 @@ public class PedidoController {
             @Valid @RequestBody ActualizarEstadoRequest request) {
         try {
             PedidoResponse pedido = pedidoService.actualizarEstado(id, request);
+            // Notificar al usuario si el pedido existe y tiene usuario
+            if (pedido.getUsuarioId() != null && pedido.getNumeroOrden() != null && pedido.getEstado() != null) {
+                notificacionService.notificarCambioEstadoPedido(pedido.getUsuarioId(), pedido.getNumeroOrden(), pedido.getEstado().name());
+            }
             return ResponseEntity.ok(pedido);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()

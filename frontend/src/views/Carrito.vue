@@ -204,10 +204,6 @@ const handleCheckout = async () => {
     // Construye el objeto de pedido desde el carrito
     console.log('Items en carrito:', cartStore.items)
     const pedidoRequest = {
-      productos: cartStore.items.map(item => ({
-        productoId: item.productoId || item.producto?.id || item.id,
-        cantidad: Number(item.cantidad) || 1
-      })),
       direccionEnvio: direccionEnvio.value,
       metodoPago: metodoPago.value,
       telefonoContacto: telefonoContacto.value

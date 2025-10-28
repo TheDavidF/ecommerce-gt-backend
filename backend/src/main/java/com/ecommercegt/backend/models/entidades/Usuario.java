@@ -36,6 +36,10 @@ public class Usuario {
     
     @Column(name = "nombre_completo", length = 255)
     private String nombreCompleto;
+
+    public String getNombreCompleto() {
+        return nombreCompleto;
+    }
     
     @Column(name = "telefono", length = 50)
     private String telefono;

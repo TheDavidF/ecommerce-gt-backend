@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Map;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -27,6 +29,22 @@ public class ModeradorService {
     private final SolicitudModeracionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
     
+        /**
+         * Listar usuarios para sancionar (solo id, nombreCompleto, nombreUsuario)
+         */
+        @Transactional(readOnly = true)
+        public List<Map<String, Object>> listarUsuariosParaSancion() {
+            List<Usuario> usuarios = usuarioRepository.findAll();
+            List<Map<String, Object>> resultado = new java.util.ArrayList<>();
+            for (Usuario u : usuarios) {
+                Map<String, Object> userMap = new java.util.HashMap<>();
+                userMap.put("id", u.getId());
+                userMap.put("nombreCompleto", u.getNombreCompleto());
+                userMap.put("nombreUsuario", u.getNombreUsuario());
+                resultado.add(userMap);
+            }
+            return resultado;
+        }
     /**
      * Listar solicitudes pendientes de moderación
      */

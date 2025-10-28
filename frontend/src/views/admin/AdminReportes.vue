@@ -10,6 +10,8 @@ const {
   clientesPorVentas,
   clientesPorPedidos,
   clientesPorProductos,
+  historialSanciones,
+  historialNotificaciones,
   loading,
   error
 } = storeToRefs(reportesStore)
@@ -54,6 +56,12 @@ async function cargarReporte() {
       break
     case 'productosVenta':
       await reportesStore.fetchClientesPorProductos()
+      break
+    case 'sanciones':
+      await reportesStore.fetchHistorialSanciones()
+      break
+    case 'notificaciones':
+      await reportesStore.fetchHistorialNotificaciones()
       break
   }
 }
@@ -269,6 +277,81 @@ function formatearMoneda(valor) {
         <p v-if="clientesPorProductos.length === 0" class="sin-datos">
           No hay datos para mostrar
         </p>
+      </div>
+      <!-- Historial de Sanciones -->
+      <div v-if="reporteActivo === 'sanciones'" class="reporte-content">
+        <h3>Historial de Sanciones</h3>
+        <div v-if="historialSanciones.length === 0" class="no-data">
+          No hay sanciones registradas
+        </div>
+        <div v-else class="table-container">
+          <table class="reporte-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Moderador</th>
+                <th>Razón</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Activa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="sancion in historialSanciones" :key="sancion.id">
+                <td>{{ sancion.id }}</td>
+                <td>{{ sancion.usuario.nombreCompleto }}</td>
+                <td>{{ sancion.moderador.nombreCompleto }}</td>
+                <td>{{ sancion.razon }}</td>
+                <td>{{ formatearFecha(sancion.fechaInicio) }}</td>
+                <td>{{ formatearFecha(sancion.fechaFin) }}</td>
+                <td>
+                  <span :class="sancion.activa ? 'status-activa' : 'status-inactiva'">
+                    {{ sancion.activa ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historial de Notificaciones -->
+      <div v-if="reporteActivo === 'notificaciones'" class="reporte-content">
+        <h3>Historial de Notificaciones</h3>
+        <div v-if="historialNotificaciones.length === 0" class="no-data">
+          No hay notificaciones registradas
+        </div>
+        <div v-else class="table-container">
+          <table class="reporte-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Tipo</th>
+                <th>Título</th>
+                <th>Mensaje</th>
+                <th>Fecha</th>
+                <th>Leída</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="notif in historialNotificaciones" :key="notif.id">
+                <td>{{ notif.id }}</td>
+                <td>{{ notif.usuario.nombreCompleto }}</td>
+                <td>{{ notif.tipo }}</td>
+                <td>{{ notif.titulo }}</td>
+                <td>{{ notif.mensaje }}</td>
+                <td>{{ formatearFecha(notif.fechaCreacion) }}</td>
+                <td>
+                  <span :class="notif.leida ? 'status-leida' : 'status-no-leida'">
+                    {{ notif.leida ? 'Leída' : 'No leída' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

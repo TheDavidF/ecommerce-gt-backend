@@ -56,4 +56,9 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
      * Obtener últimas notificaciones (para vista rápida)
      */
     List<Notificacion> findTop5ByUsuarioIdOrderByFechaCreacionDesc(UUID usuarioId);
+    
+    /**
+     * Obtener todas las notificaciones leídas de un usuario
+     */
+    List<Notificacion> findByUsuarioIdAndLeidaTrue(UUID usuarioId);
 }

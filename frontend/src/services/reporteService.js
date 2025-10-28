@@ -48,6 +48,22 @@ const reporteService = {
       headers: getAuthHeader()
     })
     return response.data
+  },
+
+  async getHistorialSanciones(page = 0, size = 20) {
+    const response = await axios.get(`${API_URL}/historial-sanciones`, {
+      params: { page, size },
+      headers: getAuthHeader()
+    })
+    return response.data
+  },
+
+  async getHistorialNotificaciones(page = 0, size = 20) {
+    const response = await axios.get(`${API_URL}/historial-notificaciones`, {
+      params: { page, size },
+      headers: getAuthHeader()
+    })
+    return response.data
   }
 }
 

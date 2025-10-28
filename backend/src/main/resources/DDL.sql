@@ -161,7 +161,6 @@ CREATE TABLE items_pedido (
   id SERIAL PRIMARY KEY,
   pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
   producto_id UUID REFERENCES productos(id),
-  vendedor_id UUID REFERENCES usuarios(id),
   cantidad INTEGER NOT NULL,
   precio_unitario NUMERIC(12,2) NOT NULL,
   comision NUMERIC(12,2) NOT NULL,

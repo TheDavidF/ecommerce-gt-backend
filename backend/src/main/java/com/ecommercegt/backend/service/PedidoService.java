@@ -139,7 +139,7 @@ public class PedidoService {
             // ========== NOTIFICAR STOCK BAJO (NUEVO) ==========
             if (producto.getStock() < 5 && producto.getStock() > 0) {
                 try {
-                    notificacionService.notificarStockBajo(
+                    notificacionService.notificarProductoStockBajo(
                             producto.getVendedor().getId(),
                             producto.getId(),
                             producto.getNombre(),
@@ -209,10 +209,21 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + pedidoId));
 
         // Si el usuario tiene rol LOGISTICA o ADMIN, puede ver cualquier pedido
-        boolean esLogistica = usuario.getRoles().stream()
+        boolean esLogisticaOAdmin = usuario.getRoles().stream()
             .anyMatch(r -> r.getNombre().name().equals("LOGISTICA") || r.getNombre().name().equals("ADMIN"));
 
-        if (!esLogistica && !pedido.getUsuario().getId().equals(usuario.getId())) {
+        // Si el usuario es VENDEDOR, puede ver el pedido si alguno de los items fue vendido por él
+        boolean esVendedor = usuario.getRoles().stream()
+            .anyMatch(r -> r.getNombre().name().equals("VENDEDOR"));
+
+        boolean vendedorRelacionado = false;
+        if (esVendedor) {
+            String nombreUsuario = usuario.getNombreUsuario();
+            vendedorRelacionado = pedido.getItems().stream()
+                .anyMatch(item -> nombreUsuario != null && nombreUsuario.equals(item.getVendedorNombre()));
+        }
+
+        if (!esLogisticaOAdmin && !vendedorRelacionado && !pedido.getUsuario().getId().equals(usuario.getId())) {
             throw new RuntimeException("No tienes permiso para ver este pedido");
         }
 
@@ -493,6 +504,15 @@ public class PedidoService {
         pedido.setFechaEntregaEstimada(nuevaFecha);
         pedidoRepository.save(pedido);
 
+        // Notificar al usuario por correo sobre el cambio de fecha
+        notificacionService.crearNotificacion(
+            pedido.getUsuario().getId(),
+            com.ecommercegt.backend.models.enums.TipoNotificacion.PEDIDO_FECHA_MODIFICADA, // Tipo específico para cambio de fecha
+            "Fecha de entrega modificada",
+            "La fecha estimada de entrega de tu pedido #" + pedido.getNumeroOrden() + " ha sido cambiada a " + nuevaFecha.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+            "/mis-pedidos/" + pedido.getNumeroOrden()
+        );
+
         return convertirAResponse(pedido);
     }
 
@@ -512,6 +532,13 @@ public class PedidoService {
         pedido.setEstado(EstadoPedido.ENTREGADO);
         pedido.setFechaEntrega(LocalDateTime.now());
         pedidoRepository.save(pedido);
+
+        // Notificar al usuario por correo cuando el pedido es entregado
+        notificacionService.notificarCambioEstadoPedido(
+            pedido.getUsuario().getId(),
+            pedido.getNumeroOrden(),
+            "ENTREGADO"
+        );
 
         return convertirAResponse(pedido);
     }

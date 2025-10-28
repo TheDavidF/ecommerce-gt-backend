@@ -1,8 +1,6 @@
 import api from './api'
 
 export default {
-  // ==================== GESTIÓN DE USUARIOS ====================
-  
   // Listar usuarios
   async getUsuarios(filters = {}) {
     const params = {
@@ -14,45 +12,45 @@ export default {
     if (filters.rol) {
       params.rol = filters.rol
     }
-    const response = await api.get('/api/admin/usuarios', { params })
+    const response = await api.get('admin/usuarios', { params })
     return response.data
   },
 
   // Obtener usuario por ID
   async getUsuarioById(id) {
-    const response = await api.get(`/api/admin/usuarios/${id}`)
+    const response = await api.get(`admin/usuarios/${id}`)
     return response.data
   },
 
   // Crear usuario
   async crearUsuario(userData) {
-    const response = await api.post('/api/admin/usuarios', userData)
+    const response = await api.post('admin/usuarios', userData)
     return response.data
   },
 
   // Actualizar usuario
   async actualizarUsuario(id, userData) {
-    const response = await api.put(`/api/admin/usuarios/${id}`, userData)
+    const response = await api.put(`admin/usuarios/${id}`, userData)
     return response.data
   },
 
   // Desactivar usuario
   async desactivarUsuario(id) {
-    const response = await api.put(`/api/admin/usuarios/${id}/desactivar`)
+    const response = await api.put(`admin/usuarios/${id}/desactivar`)
     return response.data
   },
 
   // Activar usuario
   async activarUsuario(id) {
-    const response = await api.put(`/api/admin/usuarios/${id}/activar`)
+    const response = await api.put(`admin/usuarios/${id}/activar`)
     return response.data
   },
 
   // ==================== ESTADÍSTICAS ====================
-  
+
   // Obtener estadísticas generales
   async getEstadisticas() {
-    const response = await api.get('/admin/estadisticas')
+    const response = await api.get('admin/estadisticas')
     return response.data
   }
 }
