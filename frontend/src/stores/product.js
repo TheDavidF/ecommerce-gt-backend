@@ -45,7 +45,7 @@ export const useProductStore = defineStore('product', {
           size: this.pagination.size
         }
         const finalParams = { ...queryParams, ...params }
-  const response = await productService.getAvailableProducts(finalParams)
+        const response = await productService.getAvailableProducts(finalParams)
         this.products = response.content || response
         if (response.pageable) {
           this.pagination = {
@@ -57,9 +57,13 @@ export const useProductStore = defineStore('product', {
         }
         return response
       } catch (error) {
-        console.error('Error al cargar productos:', error)
-        toast.error('Error al cargar productos')
-        throw error
+        if (error.response && error.response.data) {
+          console.error('Error de backend:', error.response.data)
+        } else {
+          console.error('Error de red o Axios:', error)
+        }
+        toast.error('No se pudieron cargar los productos')
+        this.products = []
       } finally {
         this.loading = false
       }

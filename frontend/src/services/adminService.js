@@ -1,4 +1,15 @@
-import api from './api'
+import axios from 'axios'
+
+const API_URL = 'http://localhost:8080/api'
+
+// Instancia de axios sin interceptor de autenticación para endpoints públicos
+const publicAxios = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  }
+})
 
 export default {
   // Listar usuarios
@@ -12,37 +23,37 @@ export default {
     if (filters.rol) {
       params.rol = filters.rol
     }
-    const response = await api.get('admin/usuarios', { params })
+    const response = await publicAxios.get('admin/usuarios', { params })
     return response.data
   },
 
   // Obtener usuario por ID
   async getUsuarioById(id) {
-    const response = await api.get(`admin/usuarios/${id}`)
+    const response = await publicAxios.get(`admin/usuarios/${id}`)
     return response.data
   },
 
   // Crear usuario
   async crearUsuario(userData) {
-    const response = await api.post('admin/usuarios', userData)
+    const response = await publicAxios.post('admin/usuarios', userData)
     return response.data
   },
 
   // Actualizar usuario
   async actualizarUsuario(id, userData) {
-    const response = await api.put(`admin/usuarios/${id}`, userData)
+    const response = await publicAxios.put(`admin/usuarios/${id}`, userData)
     return response.data
   },
 
   // Desactivar usuario
   async desactivarUsuario(id) {
-    const response = await api.put(`admin/usuarios/${id}/desactivar`)
+    const response = await publicAxios.put(`admin/usuarios/${id}/desactivar`)
     return response.data
   },
 
   // Activar usuario
   async activarUsuario(id) {
-    const response = await api.put(`admin/usuarios/${id}/activar`)
+    const response = await publicAxios.put(`admin/usuarios/${id}/activar`)
     return response.data
   },
 
@@ -50,7 +61,7 @@ export default {
 
   // Obtener estadísticas generales
   async getEstadisticas() {
-    const response = await api.get('admin/estadisticas')
+    const response = await publicAxios.get('admin/estadisticas')
     return response.data
   }
 }

@@ -19,6 +19,22 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
+    /**
+     * Endpoint para registro de usuarios
+     * POST /api/auth/register
+     * @param registerRequest - Datos del usuario
+     * @return Mensaje de éxito o error
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        try {
+            MessageResponse response = authService.register(registerRequest);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: No se pudo registrar - " + e.getMessage()));
+        }
+    }
     
     @Autowired
     private AuthService authService;
@@ -41,10 +57,13 @@ public class AuthController {
     }
     
     /**
-     * Endpoint para obtener el usuario actualmente autenticado
-     * GET /api/auth/me
-     * @return Datos del usuario autenticado
+     * Endpoint de prueba para verificar que los controladores funcionan
+     * GET /api/auth/test
      */
+    @GetMapping("/test")
+    public ResponseEntity<?> testEndpoint() {
+        return ResponseEntity.ok(new MessageResponse("Test endpoint funcionando correctamente"));
+    }
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {

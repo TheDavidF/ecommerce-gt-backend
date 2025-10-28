@@ -2,7 +2,7 @@
   <div class="cart-item">
     <div class="cart-item-image">
       <img 
-        :src="item.productoImagen || '/placeholder.jpg'" 
+        :src="item.productoImagen || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9Ijc1IiB5PSI3NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zNWVtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5TaW4gSW1hZ2VuPC90ZXh0Pjwvc3ZnPg=='" 
         :alt="item.productoNombre"
         @error="handleImageError"
       >
@@ -124,7 +124,8 @@ const removeItem = async () => {
 }
 
 const handleImageError = (event) => {
-  event.target.src = 'https://via.placeholder.com/150?text=Sin+Imagen'
+  // Usar una imagen de data URL en lugar de URL externa
+  event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9Ijc1IiB5PSI3NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zNWVtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5TaW4gSW1hZ2VuPC90ZXh0Pjwvc3ZnPg=='
 }
 </script>
 

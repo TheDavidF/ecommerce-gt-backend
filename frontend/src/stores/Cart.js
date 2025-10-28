@@ -1,4 +1,3 @@
-
 import { defineStore } from 'pinia'
 import cartService from '../services/cartService'
 import { useToast } from 'vue-toastification'
@@ -33,6 +32,11 @@ export const useCartStore = defineStore('cart', {
       }
     },
     async fetchCart() {
+      const authStore = useAuthStore()
+      if (!authStore.hasValidToken) {
+        console.log('Usuario no autenticado, no se carga carrito')
+        return
+      }
       this.loading = true
       try {
         const cart = await cartService.getCart()
@@ -42,6 +46,9 @@ export const useCartStore = defineStore('cart', {
         this.vacio = cart.vacio !== undefined ? cart.vacio : this.items.length === 0
       } catch (error) {
         console.error('Error al cargar carrito:', error)
+        if (error.response?.status === 401) {
+          toast.error('Sesión expirada. Inicia sesión nuevamente.')
+        }
         this.items = []
         this.total = 0
         this.cantidadTotalItems = 0
@@ -51,6 +58,11 @@ export const useCartStore = defineStore('cart', {
       }
     },
     async addItem(producto, cantidad = 1) {
+      const authStore = useAuthStore()
+      if (!authStore.hasValidToken) {
+        toast.error('Debes iniciar sesión para agregar productos al carrito')
+        return
+      }
       if (!producto || !producto.id) {
         toast.error('Error: Producto inválido')
         return
@@ -143,11 +155,19 @@ export const useCartStore = defineStore('cart', {
       }
     },
     async verifyStock() {
+      const authStore = useAuthStore()
+      if (!authStore.hasValidToken) {
+        toast.error('Debes iniciar sesión para verificar el stock')
+        return false
+      }
       try {
         const response = await cartService.verifyStock()
         return response.stockDisponible
       } catch (error) {
         console.error('Error al verificar stock:', error)
+        if (error.response?.status === 401) {
+          toast.error('Sesión expirada. Inicia sesión nuevamente.')
+        }
         return false
       }
     }

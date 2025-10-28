@@ -136,6 +136,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 import NavBar from '../components/layout/NavBar.vue'
 import CartItem from '../components/cart/CartItem.vue'
 import EmptyState from '../components/common/EmptyState.vue'
@@ -145,6 +146,7 @@ import pedidoService from '@/services/pedidoService'
 const router = useRouter()
 const toast = useToast()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 const calculateTotal = computed(() => {
   const subtotal = cartStore.subtotal
@@ -179,8 +181,13 @@ const metodoPago = ref('')
 const telefonoContacto = ref('')
 
 const handleCheckout = async () => {
+  console.log('Iniciando checkout...')
+  console.log('Usuario autenticado:', authStore.isAuthenticated)
+  console.log('Token válido:', authStore.hasValidToken)
+  
   // Verificar stock antes de proceder
   const stockAvailable = await cartStore.verifyStock()
+  console.log('Stock disponible:', stockAvailable)
   if (!stockAvailable) {
     toast.error('Algunos productos no tienen stock suficiente')
     await cartStore.fetchCart()
@@ -210,11 +217,14 @@ const handleCheckout = async () => {
     }
     console.log('Pedido enviado:', pedidoRequest)
     const pedidoCreado = await pedidoService.crearPedidoDesdeCarrito(pedidoRequest)
+    console.log('Pedido creado:', pedidoCreado)
     toast.success('¡Pedido realizado con éxito!')
     await cartStore.clearCart()
     router.push(`/pedido/${pedidoCreado.id}`)
   } catch (err) {
-    toast.error('No se pudo crear el pedido')
+    console.error('Error completo en checkout:', err)
+    console.error('Respuesta del servidor:', err.response?.data)
+    toast.error('No se pudo crear el pedido: ' + (err.response?.data?.message || err.message))
   }
 }
 

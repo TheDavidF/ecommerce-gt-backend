@@ -28,6 +28,12 @@ export const useAuthStore = defineStore("auth", {
 
     currentUser: (state) => state.user,
     userRoles: (state) => state.user?.roles || [],
+
+    // Getter para verificar si hay token válido
+    hasValidToken: (state) => {
+      const token = state.token || localStorage.getItem('token');
+      return !!token && token.length > 10; // Verificación básica
+    },
   },
 
   actions: {
@@ -50,33 +56,16 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async register(userData) {
-      try {
-        const payload = {
-          nombreUsuario: userData.nombreUsuario,
-          correo: userData.email,
-          contrasena: userData.password,
-          nombreCompleto: userData.nombreCompleto,
-          telefono: userData.telefono || null,
-          direccion: userData.direccion || null,
-        };
-
-        console.log("Enviando registro:", payload);
-
-        const response = await axios.post(`${API_URL}/auth/register`, payload);
-
-        console.log("Respuesta registro:", response.data);
-
-        return response.data;
-      } catch (error) {
-        console.error("Error completo:", error);
-        console.error("Error response:", error.response);
-        console.error("Error data:", error.response?.data);
-
-        // Lanzar error con mensaje específico
-        throw new Error(
-          error.response?.data?.message || "Error al registrarse"
-        );
-      }
+        try {
+          // Usar el servicio y cliente 'api' para registro
+          const response = await authService.register(userData);
+          return response;
+        } catch (error) {
+          console.error("Error completo:", error);
+          throw new Error(
+            error.response?.data?.message || "Error al registrarse"
+          );
+        }
     },
 
     logout() {

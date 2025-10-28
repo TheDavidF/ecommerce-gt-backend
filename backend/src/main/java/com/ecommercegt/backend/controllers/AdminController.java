@@ -33,7 +33,7 @@ public class AdminController {
      * GET /api/admin/estadisticas
      */
     @GetMapping("/estadisticas")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<EstadisticasGeneralesResponse> obtenerEstadisticas() {
         EstadisticasGeneralesResponse estadisticas = adminService.obtenerEstadisticasGenerales();
         return ResponseEntity.ok(estadisticas);
@@ -46,7 +46,7 @@ public class AdminController {
      * GET /api/admin/usuarios
      */
     @GetMapping("/usuarios")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Page<UserResponse>> listarUsuarios(
             @RequestParam(required = false) String rol,
             @RequestParam(defaultValue = "0") int page,
@@ -75,7 +75,7 @@ public class AdminController {
      * GET /api/admin/usuarios/{id}
      */
     @GetMapping("/usuarios/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserResponse> obtenerUsuario(@PathVariable UUID id) {
         try {
             UserResponse usuario = adminService.obtenerUsuarioPorId(id);
@@ -90,7 +90,7 @@ public class AdminController {
      * POST /api/admin/usuarios
      */
     @PostMapping("/usuarios")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> crearUsuario(@Valid @RequestBody CreateUserRequest request) {
         try {
             UserResponse usuario = adminService.crearUsuario(request);
@@ -106,7 +106,7 @@ public class AdminController {
      * PUT /api/admin/usuarios/{id}
      */
     @PutMapping("/usuarios/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> actualizarUsuario(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request
@@ -125,7 +125,7 @@ public class AdminController {
      * PUT /api/admin/usuarios/{id}/desactivar
      */
     @PutMapping("/usuarios/{id}/desactivar")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> desactivarUsuario(@PathVariable UUID id) {
         try {
             adminService.desactivarUsuario(id);
@@ -141,7 +141,7 @@ public class AdminController {
      * PUT /api/admin/usuarios/{id}/activar
      */
     @PutMapping("/usuarios/{id}/activar")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> activarUsuario(@PathVariable UUID id) {
         try {
             adminService.activarUsuario(id);

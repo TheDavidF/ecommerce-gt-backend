@@ -24,7 +24,7 @@ public class ReporteController {
     private final ReporteService reporteService;
     
     @GetMapping("/productos-mas-vendidos")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<ReporteProductoResponse>> getProductosMasVendidos(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -39,7 +39,7 @@ public class ReporteController {
     }
     
     @GetMapping("/clientes-por-ganancias")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<ReporteClienteGananciasResponse>> getClientesPorGanancias(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -54,7 +54,7 @@ public class ReporteController {
     }
     
     @GetMapping("/clientes-por-ventas")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<ReporteClienteVentasResponse>> getClientesPorVentas(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -69,7 +69,7 @@ public class ReporteController {
     }
     
     @GetMapping("/clientes-por-pedidos")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<ReporteClientePedidosResponse>> getClientesPorPedidos(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -84,7 +84,7 @@ public class ReporteController {
     }
     
     @GetMapping("/clientes-por-productos")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<ReporteClienteProductosResponse>> getClientesPorProductos() {
         
         List<ReporteClienteProductosResponse> reporte = reporteService
@@ -94,7 +94,7 @@ public class ReporteController {
     }
     
     @GetMapping("/historial-sanciones")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Page<Sancion>> getHistorialSanciones(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -106,7 +106,7 @@ public class ReporteController {
     }
     
     @GetMapping("/historial-notificaciones")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Page<NotificacionResponse>> getHistorialNotificaciones(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

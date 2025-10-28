@@ -6,7 +6,7 @@ export default {
     // Mapear campos al formato del backend
     const payload = {
       nombreUsuario: userData.nombreUsuario,
-      email: userData.email,
+      correo: userData.email, // Cambiado de 'email' a 'correo'
       contrasena: userData.password,  // password → contrasena
       nombreCompleto: userData.nombreCompleto,
       telefono: userData.telefono || null,

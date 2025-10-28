@@ -445,4 +445,40 @@ public class ProductoService {
 
         productoRepository.delete(producto);
     }
+
+    /**
+     * Subir imagen para un producto
+     */
+    @Transactional
+    public ProductoResponse subirImagen(UUID productoId, org.springframework.web.multipart.MultipartFile file, boolean esPrincipal) {
+        try {
+            Producto producto = productoRepository.findById(productoId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productoId));
+
+            // Carpeta donde se guardarán las imágenes
+            String uploadDir = "uploads/productos";
+            java.nio.file.Files.createDirectories(java.nio.file.Paths.get(uploadDir));
+
+            // Nombre único para la imagen
+            String fileName = productoId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            java.nio.file.Path filePath = java.nio.file.Paths.get(uploadDir, fileName);
+
+            // Guardar archivo en disco
+            java.nio.file.Files.write(filePath, file.getBytes());
+
+            // Crear entidad ImagenProducto
+            com.ecommercegt.backend.models.entidades.ImagenProducto imagen = new com.ecommercegt.backend.models.entidades.ImagenProducto();
+            imagen.setUrlImagen("/" + uploadDir + "/" + fileName); // URL relativa
+            imagen.setEsPrincipal(esPrincipal);
+            imagen.setProducto(producto);
+
+            // Asociar imagen al producto
+            producto.agregarImagen(imagen);
+            productoRepository.save(producto);
+
+            return convertirAResponse(producto);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al guardar la imagen: " + e.getMessage(), e);
+        }
+    }
 }

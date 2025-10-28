@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,7 +72,7 @@ public class NotificacionService {
     /**
      * Crear notificación para un usuario
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Notificacion crearNotificacion(
             UUID usuarioId,
             TipoNotificacion tipo,
@@ -196,7 +197,7 @@ public class NotificacionService {
     /**
      * Notificar pedido creado (firma compatible)
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notificarPedidoCreado(UUID usuarioId, String numeroOrden, String total) {
         crearNotificacion(
             usuarioId,
@@ -268,7 +269,7 @@ public class NotificacionService {
     /**
      * Notificar producto con stock bajo
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notificarProductoStockBajo(UUID vendedorId, UUID productoId, String productoNombre, int stockActual) {
         crearNotificacion(
             vendedorId,
@@ -323,7 +324,7 @@ public class NotificacionService {
     /**
      * Notificar nueva venta a vendedor
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notificarNuevaVenta(UUID vendedorId, String numeroOrden, String productoNombre, String cantidad) {
         crearNotificacion(
             vendedorId,

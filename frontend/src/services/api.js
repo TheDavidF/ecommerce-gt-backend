@@ -8,7 +8,8 @@ console.log('API_URL configurada:', API_URL)
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
   },
   withCredentials: true
 })
@@ -29,29 +30,6 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor de respuesta para log detallado de errores
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      // El backend respondió con un código fuera del rango 2xx
-      console.error('API Error:', {
-        url: error.config.url,
-        method: error.config.method,
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-    } else if (error.request) {
-      // La petición fue hecha pero no hubo respuesta
-      console.error('No response from backend:', error.request);
-    } else {
-      // Error al configurar la petición
-      console.error('Axios config error:', error.message);
-    }
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor
 api.interceptors.response.use(

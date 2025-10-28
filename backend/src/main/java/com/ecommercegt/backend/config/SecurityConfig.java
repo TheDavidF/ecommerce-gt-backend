@@ -41,13 +41,13 @@ public class SecurityConfig {
     @Autowired
     private AuthTokenFilter authTokenFilter;
 
-    @Value("${cors.allowed-origins:http://localhost:5173}")
+    @Value("${cors.allowed-origins:http://localhost:5173,https://*.ngrok-free.dev,https://*.netlify.app}")
     private String allowedOrigins;
 
     @Value("${cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}")
     private String allowedMethods;
 
-    @Value("${cors.allowed-headers:*}")
+    @Value("${cors.allowed-headers:Authorization,Content-Type,X-Requested-With}")
     private String allowedHeaders;
 
     @Bean
@@ -75,16 +75,30 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Configurar orígenes permitidos desde variables de entorno
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
-        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+    // Patrones de origen permitidos desde variable de entorno (permite subdominios dinámicos)
+    configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split(",")));
+
+        // Métodos permitidos
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Headers permitidos (incluye ngrok-skip-browser-warning)
+        List<String> headers = Arrays.asList(allowedHeaders.split(","));
+        if (!headers.contains("ngrok-skip-browser-warning")) {
+            headers = new java.util.ArrayList<>(headers);
+            headers.add("ngrok-skip-browser-warning");
+        }
+        configuration.setAllowedHeaders(headers);
+
+        // Permitir credenciales
         configuration.setAllowCredentials(true);
+
+        // Headers expuestos
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
@@ -112,6 +126,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/public").permitAll()
                         .requestMatchers("/error").permitAll()
 
+                        // Endpoint de prueba moderador (temporal)
+                        .requestMatchers("/api/moderador/test").permitAll()
+                        .requestMatchers("/api/moderador/test-service").permitAll()
+
                         // Categorías - TODOS los GET son públicos
                         .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
@@ -128,9 +146,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/producto/**").permitAll()
 
                         // ============================================
-                        // ENDPOINTS DE ADMIN (REQUIEREN ROL ADMIN)
+                        // ENDPOINTS DE MODERADOR (TEMPORALMENTE PÚBLICOS PARA TESTING)
                         // ============================================
-                        .requestMatchers("/api/admin/**").authenticated()
+                        .requestMatchers("/api/moderador/**").permitAll()
+
+                        // ============================================
+                        // ENDPOINTS DE ADMIN (TEMPORALMENTE PÚBLICOS PARA TESTING)
+                        // ============================================
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/reportes/**").permitAll()
+
+                        // ============================================
+                        // ENDPOINTS DE LOGISTICA (TEMPORALMENTE PÚBLICOS PARA TESTING)
+                        // ============================================
+                        .requestMatchers("/api/pedidos/en-curso").permitAll()
+                        .requestMatchers("/api/pedidos/proximos-vencer").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/pedidos/*/fecha-entrega").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/pedidos/*/marcar-entregado").permitAll()
 
                         // ============================================
                         // TODO LO DEMAS REQUIERE AUTENTICACION

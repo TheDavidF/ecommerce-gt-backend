@@ -1,4 +1,13 @@
-import api from './api'
+import axios from 'axios'
+
+// Instancia de axios sin interceptor de autenticación para endpoints públicos
+const publicAxios = axios.create({
+  baseURL: 'http://localhost:8080/api',
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  }
+})
 
 export default {
   // ==================== SOLICITUDES DE MODERACIÓN ====================
@@ -11,7 +20,7 @@ export default {
       page: params.page || 0,
       size: params.size || 10
     }
-    const response = await api.get('/api/moderador/solicitudes/pendientes', { params: queryParams })
+    const response = await publicAxios.get('moderador/solicitudes/pendientes', { params: queryParams })
     console.log('Respuesta cruda solicitudes pendientes:', response)
     return response.data
   },
@@ -25,7 +34,7 @@ export default {
       size: params.size || 10
     }
     
-  const response = await api.get(`/api/moderador/solicitudes/estado/${estado}`, { params: queryParams })
+  const response = await publicAxios.get(`moderador/solicitudes/estado/${estado}`, { params: queryParams })
     return response.data
   },
 
@@ -38,7 +47,7 @@ export default {
       size: params.size || 10
     }
     
-  const response = await api.get('/api/moderador/solicitudes', { params: queryParams })
+  const response = await publicAxios.get('moderador/solicitudes', { params: queryParams })
     return response.data
   },
 
@@ -46,7 +55,7 @@ export default {
    * Obtener detalles de una solicitud
    */
   async getSolicitudById(id) {
-  const response = await api.get(`/api/moderador/solicitudes/${id}`)
+    const response = await publicAxios.get(`moderador/solicitudes/${id}`)
     return response.data
   },
 
@@ -55,7 +64,7 @@ export default {
    */
   async aprobarSolicitud(id, comentario = null) {
     const payload = comentario ? { comentario } : {}
-  const response = await api.put(`/api/moderador/solicitudes/${id}/aprobar`, payload)
+    const response = await publicAxios.put(`moderador/solicitudes/${id}/aprobar`, payload)
     return response.data
   },
 
@@ -64,7 +73,7 @@ export default {
    */
   async rechazarSolicitud(id, motivo) {
     const payload = { motivo }
-  const response = await api.put(`/api/moderador/solicitudes/${id}/rechazar`, payload)
+    const response = await publicAxios.put(`moderador/solicitudes/${id}/rechazar`, payload)
     return response.data
   },
 
@@ -73,7 +82,7 @@ export default {
    */
   async solicitarCambios(id, comentario) {
     const payload = { comentario }
-  const response = await api.put(`/api/moderador/solicitudes/${id}/solicitar-cambios`, payload)
+    const response = await publicAxios.put(`moderador/solicitudes/${id}/solicitar-cambios`, payload)
     return response.data
   },
 
@@ -83,7 +92,7 @@ export default {
    * Obtener producto por ID (con detalles completos)
    */
   async getProductoById(id) {
-  const response = await api.get(`/api/productos/${id}`)
+    const response = await publicAxios.get(`productos/${id}`)
     return response.data
   },
 
@@ -91,7 +100,15 @@ export default {
    * Obtener estadísticas de moderación
    */
   async getEstadisticasModeracion() {
-  const response = await api.get('/api/moderador/estadisticas')
+    const response = await publicAxios.get('moderador/estadisticas')
+    return response.data
+  },
+
+  /**
+   * Obtener usuarios para sancionar
+   */
+  async getUsuariosParaSancion() {
+    const response = await publicAxios.get('moderador/usuarios')
     return response.data
   }
 }

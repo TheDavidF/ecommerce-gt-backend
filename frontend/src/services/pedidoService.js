@@ -46,13 +46,7 @@ export default {
    * @returns {Promise<Object>} Pedido creado
    */
   async crearPedidoDesdeCarrito(data) {
-  const resp = await api.post('/pedidos/crear-desde-carrito', data, {
-    withCredentials: true,
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      'Content-Type': 'application/json'
-    }
-  });
+  const resp = await api.post('/pedidos/crear-desde-carrito', data);
   return resp.data;
   },
 

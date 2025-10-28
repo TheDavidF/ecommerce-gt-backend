@@ -45,18 +45,6 @@
           </button>
         </div>
 
-        <!-- Status -->
-        <div class="mt-12 p-6 bg-green-50 rounded-lg border border-green-200">
-          <p class="text-green-800 font-semibold">
-             Frontend conectado correctamente
-          </p>
-          <p class="text-green-600 text-sm mt-2">
-            Vue 3 + Vite + TailwindCSS + Router + Pinia
-          </p>
-          <p class="text-green-600 text-xs mt-1">
-            Backend: {{ apiUrl }}
-          </p>
-        </div>
       </div>
     </div>
   </div>

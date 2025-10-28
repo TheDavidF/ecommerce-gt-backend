@@ -2,16 +2,20 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
+// Instancia de axios sin interceptor de autenticación para endpoints públicos
+const publicAxios = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  }
+});
+
 /**
  * Obtener pedidos en curso (PENDIENTE, CONFIRMADO, EN_PREPARACION, ENVIADO)
  */
 export const obtenerPedidosEnCurso = async () => {
-  const token = localStorage.getItem('token');
-  const response = await axios.get(`${API_URL}/pedidos/en-curso`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await publicAxios.get(`pedidos/en-curso`);
   return response.data;
 };
 
@@ -19,12 +23,7 @@ export const obtenerPedidosEnCurso = async () => {
  * Obtener pedidos próximos a vencer (menos de 24h)
  */
 export const obtenerPedidosProximosVencer = async () => {
-  const token = localStorage.getItem('token');
-  const response = await axios.get(`${API_URL}/pedidos/proximos-vencer`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await publicAxios.get(`pedidos/proximos-vencer`);
   return response.data;
 };
 
@@ -32,15 +31,9 @@ export const obtenerPedidosProximosVencer = async () => {
  * Modificar fecha de entrega estimada
  */
 export const modificarFechaEntrega = async (pedidoId, fechaEntregaEstimada) => {
-  const token = localStorage.getItem('token');
-  const response = await axios.put(
-    `${API_URL}/pedidos/${pedidoId}/fecha-entrega`,
-    { fechaEntregaEstimada },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  const response = await publicAxios.put(
+    `pedidos/${pedidoId}/fecha-entrega`,
+    { fechaEntregaEstimada }
   );
   return response.data;
 };
@@ -49,15 +42,9 @@ export const modificarFechaEntrega = async (pedidoId, fechaEntregaEstimada) => {
  * Marcar pedido como entregado
  */
 export const marcarComoEntregado = async (pedidoId) => {
-  const token = localStorage.getItem('token');
-  const response = await axios.put(
-    `${API_URL}/pedidos/${pedidoId}/marcar-entregado`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  const response = await publicAxios.put(
+    `pedidos/${pedidoId}/marcar-entregado`,
+    {}
   );
   return response.data;
 };

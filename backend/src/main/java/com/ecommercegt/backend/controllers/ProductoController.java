@@ -272,4 +272,24 @@ public class ProductoController {
                     .body(new MessageResponse("Error al rechazar producto: " + e.getMessage()));
         }
     }
+    
+    /**
+     * Subir imagen para un producto
+     * POST /api/productos/{id}/imagenes
+     */
+    @PostMapping("/{id}/imagenes")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> subirImagenProducto(
+            @PathVariable UUID id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "esPrincipal", defaultValue = "false") boolean esPrincipal
+    ) {
+        try {
+            ProductoResponse response = productoService.subirImagen(id, file, esPrincipal);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error al subir imagen: " + e.getMessage()));
+        }
+    }
 }
